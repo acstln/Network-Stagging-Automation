@@ -1,40 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import TopBar from "./common/components/TopBar";
+import StaggingPage from "./staggingPage/StaggingPage";
 
 function App() {
-  const [subnet, setSubnet] = useState('');
-  const [devices, setDevices] = useState([]);
-
-  const handleDiscover = async () => {
-    const response = await fetch(`http://127.0.0.1:8000/discover?subnet=${subnet}`);
-    const data = await response.json();
-    console.log(data); // <== ça affiche bien le JSON
-    setDevices(data.devices);
-  };
+  const [page, setPage] = useState("home");
 
   return (
-    <div className="App">
-      <h1>Network Discovery</h1>
-      <input
-        type="text"
-        placeholder="Enter subnet"
-        value={subnet}
-        onChange={(e) => setSubnet(e.target.value)}
-      />
-      <button onClick={handleDiscover}>Discover</button>
-
-      <h2>Devices</h2>
-      <ul>
-        {devices.map((device, index) => (
-          <li key={index}>
-            {device.ip} - 
-            {device.status === 'online' ? (
-              <span style={{ color: 'green' }}>🟢</span>
-            ) : (
-              <span style={{ color: 'red' }}>🔴</span>
-            )}
-          </li>
-        ))}
-      </ul>
+    <div style={{ paddingTop: 56 }}>
+      <TopBar setPage={setPage} />
+      {page === "home" && (
+        <div className="container-lg mt-6">
+          <h1 className="f2 mb-3">Bienvenue sur Faststage !</h1>
+          <p className="f4">
+            Cette application vous permet de découvrir et gérer votre réseau
+            facilement.
+            <br />
+            Utilisez le menu pour accéder aux différentes fonctionnalités.
+          </p>
+        </div>
+      )}
+      {page === "stagging" && <StaggingPage />}
+      {/* Tu pourras ajouter d'autres pages ici plus tard */}
     </div>
   );
 }

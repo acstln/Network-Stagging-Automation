@@ -1,0 +1,383 @@
+/* CSS in StepTimeline.css */
+.staggingTimeLine {
+  width: min(500px, 95vw);
+  margin: 48px auto 0 auto;
+}
+.timeLine__heading {
+  padding-inline-start: 4rem;
+}
+.timeLine__heading h4 {
+  font-size: 2rem;
+  margin-block: 0.5rem;
+}
+.step {
+  position: relative;
+  padding: 0rem 0rem 1rem 4rem;
+  transition: background 0.3s ease-in-out;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+.step h5 {
+  color: rgba(0, 0, 0, 0.9);
+  font-size: 1rem;
+  margin-block: 0;
+  text-align: left;
+  padding-top: 0.5rem;
+}
+.step .stepNumber {
+  position: absolute;
+  top: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  max-width: 2.5rem;
+  max-height: 2.5rem;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.3rem;
+  color: #0969da;
+  border-radius: 50%;
+  background: #f6f8fa;
+  border: 2px solid #0969da;
+  box-shadow: 0 2px 6px #d0d7de55;
+  left: 0rem;
+}
+.step:not(:last-child):before {
+  position: absolute;
+  content: "";
+  width: 2px;
+  background-color: #d0d7de;
+  left: calc(2.5rem/2 - 1px);
+  top: 0rem;
+  bottom: -3rem;
+  z-index: -10;
+}
+.credentials-form,
+.device-type-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  max-width: 350px;
+}
+
+.credentials-form input,
+.device-type-form select,
+.device-type-form input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  font-size: 1rem;
+}
+
+.credentials-form input:focus,
+.device-type-form select:focus {
+  border: 1.5px solid #0969da;
+  outline: none;
+}
+
+.device-type-form label {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+/* Tous les boutons par défaut : gris clair */
+.btn,
+.btn.btn-sm,
+.credentials-form button,
+.device-type-form button,
+.upload-form button,
+.subnet-form button {
+  margin-top: 8px;
+  align-self: flex-start;
+  font-size: 0.78rem;
+  padding: 0.18rem 0.7rem;
+  height: 24px;
+  min-height: 24px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #24292f;
+  font-weight: 500;
+  transition: background 0.2s, border 0.2s;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: none;
+}
+
+/* Hover effect */
+.btn:hover,
+.btn.btn-sm:hover,
+.credentials-form button:hover,
+.device-type-form button:hover,
+.upload-form button:hover,
+.subnet-form button:hover {
+  background: #eaecef;
+  border-color: #b6bfc8;
+  color: #24292f;
+}
+
+.btn:disabled,
+.credentials-form button:disabled,
+.device-type-form button:disabled,
+.upload-form button:disabled {
+  background: #f6f8fa;
+  color: #b6bfc8;
+  border-color: #eaecef;
+  cursor: not-allowed;
+}
+
+/* Seul le bouton "Collect Information" est bleu */
+.btn-collect {
+  background: #0969da !important;
+  color: #fff !important;
+  border: none !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  padding: 0.35rem 1.2rem !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  border-radius: 6px !important;
+}
+
+.btn-collect:hover {
+  background: #1756a9 !important;
+  color: #fff !important;
+}
+
+/* Step 2 (Credentials) */
+.credentials-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  max-width: 350px;
+}
+
+.credentials-form input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  font-size: 1rem;
+}
+
+.credentials-form input:focus {
+  border: 1.5px solid #0969da;
+  outline: none;
+}
+
+.credentials-form button {
+  margin-top: 8px;
+  align-self: flex-start;
+  font-size: 0.78rem;
+  padding: 0.18rem 0.7rem;
+  height: 24px;
+  min-height: 24px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #24292f;
+  font-weight: 500;
+  transition: background 0.2s, border 0.2s;
+  text-align: left;
+}
+
+.credentials-form button:disabled {
+  background: #f6f8fa;
+  color: #b6bfc8;
+  border-color: #eaecef;
+  cursor: not-allowed;
+}
+
+/* Step 3 (Device Type) */
+.device-type-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  max-width: 350px;
+}
+
+.device-type-form label {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.device-type-form select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  font-size: 1rem;
+}
+
+.device-type-form select:focus {
+  border: 1.5px solid #0969da;
+  outline: none;
+}
+
+.device-type-form button {
+  margin-top: 8px;
+  align-self: flex-start;
+  font-size: 0.78rem;
+  padding: 0.18rem 0.7rem;
+  height: 24px;
+  min-height: 24px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #24292f;
+  font-weight: 500;
+  transition: background 0.2s, border 0.2s;
+  text-align: left;
+}
+
+.device-type-form button:disabled {
+  background: #f6f8fa;
+  color: #b6bfc8;
+  border-color: #eaecef;
+  cursor: not-allowed;
+}
+
+/* Ajoute à la fin de StepTimeline.css */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  z-index: 1001;
+  min-width: 300px;
+}
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.18);
+  z-index: 1000;
+}
+.upload-form input[type="file"] {
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.5rem;
+  border-radius: 6px;
+  border: 1.5px solid #0969da;
+  background: #f6f8fa;
+  color: #24292f;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+.upload-form input[type="text"] {
+  margin-bottom: 1rem;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+}
+
+/* New styles for primary buttons */
+.btn-primary,
+.btn.btn-primary,
+.subnet-form button.btn-primary {
+  background: #0969da;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover,
+.btn.btn-primary:hover,
+.subnet-form button.btn-primary:hover {
+  background: #1756a9;
+  color: #fff;
+}
+
+/* Force tous les boutons à être gris, même ceux avec .btn-primary, sauf .btn-collect */
+.subnet-form button,
+.credentials-form button,
+.device-type-form button,
+.upload-form button,
+.btn.btn-primary,
+.btn-primary {
+  background: #f6f8fa !important;
+  color: #24292f !important;
+  border: 1px solid #d0d7de !important;
+  font-weight: 500 !important;
+}
+
+.subnet-form button:hover,
+.credentials-form button:hover,
+.device-type-form button:hover,
+.upload-form button:hover,
+.btn.btn-primary:hover,
+.btn-primary:hover {
+  background: #eaecef !important;
+  color: #24292f !important;
+  border-color: #b6bfc8 !important;
+}
+
+/* Seul le bouton de collecte reste bleu */
+.btn-collect {
+  background: #0969da !important;
+  color: #fff !important;
+  border: none !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  padding: 0.35rem 1.2rem !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  border-radius: 6px !important;
+}
+.btn-collect:hover {
+  background: #1756a9 !important;
+  color: #fff !important;
+}
+
+/* Discover button : exactement la même taille que l'input texte */
+.subnet-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.subnet-form input[type="text"] {
+  height: 38px;
+  padding: 6px 10px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  box-sizing: border-box;
+}
+
+.subnet-form button {
+  background: #24292f !important;
+  color: #fff !important;
+  border: 1px solid #1b1f2426 !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  padding: 6px 16px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  border-radius: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  margin-top: 0 !important;
+}
+
+.subnet-form button:hover {
+  background: #57606a !important;
+  color: #fff !important;
+  border-color: #24292f !important;
+}
