@@ -1,0 +1,15 @@
+---
+- name: Récupérer la version du switch Cisco IOS
+  hosts: 192.168.254.29
+  gather_facts: no
+
+  tasks:
+    - name: Afficher la version du switch
+      cisco.ios.ios_command:
+        commands:
+          - show version
+      register: version_result
+
+    - name: Afficher le résultat
+      debug:
+        var: version_result.stdout_lines

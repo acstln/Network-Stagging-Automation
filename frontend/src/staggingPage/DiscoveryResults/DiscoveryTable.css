@@ -17,49 +17,50 @@
 
 .discovery-table {
   width: 100%;
-  font-size: 14px;
-  border-collapse: separate;
-  border-spacing: 0;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 4px #eaecef;
+  border-collapse: collapse;
   background: #fff;
+  font-size: 0.97rem;
+}
+
+.discovery-table th,
+.discovery-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #eaecef;
+  text-align: left;
 }
 
 .discovery-table th {
-  padding: 10px 8px;
-  border-bottom: 1px solid #eaecef;
-  color: #57606a;
   background: #f6f8fa;
-}
-
-.discovery-table td {
-  padding: 8px 8px;
-  border-bottom: 1px solid #eaecef;
-  background: #fff;
-}
-
-.discovery-table td.status-cell span {
-  display: inline-block;
-  border-radius: 16px;
-  padding: 2px 14px;
   font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.2px;
-  transition: background 0.2s;
-  border: 1px solid transparent;
+  color: #24292f;
 }
 
-.discovery-table td.status-cell .online {
-  background: rgba(46, 160, 67, 0.15);
-  color: #187943;
-  border-color: #b6e2c6;
+/* Status badge styles */
+.status-badge {
+  display: inline-block;
+  min-width: 70px;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 0.95em;
+  font-weight: 500;
+  text-align: center;
+  color: #222;
+  background: rgba(40, 167, 69, 0.15); /* Valeur par défaut douce */
 }
 
-.discovery-table td.status-cell .offline {
-  background: rgba(209, 36, 47, 0.13);
-  color: #b3261e;
-  border-color: #f5bfc2;
+.status-online {
+  background: rgba(40, 167, 69, 0.18);   /* Vert doux */
+  color: #207a3c;
+}
+
+.status-offline {
+  background: rgba(215, 58, 73, 0.18);   /* Rouge doux */
+  color: #a02a36;
+}
+
+.status-unknown {
+  background: rgba(255, 152, 0, 0.18);   /* Orange doux */
+  color: #b36a00;
 }
 
 .discovery-table-empty {

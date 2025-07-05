@@ -1,0 +1,15 @@
+---
+- name: Test SSH connection to Cisco device
+  hosts: 192.168.254.29
+  gather_facts: no  # Pas nécessaire pour ce test spécifique
+
+  tasks:
+    - name: Ping the device to ensure SSH connection
+      ios_command:
+        commands:
+          - "show version"
+      register: result
+
+    - name: Display the result of the command
+      debug:
+        var: result

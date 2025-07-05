@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pythonping import ping
 import ipaddress
@@ -8,6 +8,8 @@ import time
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import re
+import subprocess
+import json
 
 app = FastAPI()
 
@@ -140,6 +142,29 @@ def parse_ip_range(subnet):
         end = int(m.group(3))
         return [f"{prefix}{i}" for i in range(start, end + 1)]
     return None
+
+@app.post("/collect_info")
+def collect_info(ip: str = Body(...), username: str = Body(...), password: str = Body(...), os_type: str = Body(...)):
+    # Appelle le playbook Ansible en ligne de commande
+    cmd = [
+        "ansible-playbook",
+        "-i", f"{ip},",  # virgule pour inventaire inline
+        "--extra-vars", f"ansible_user={username} ansible_password={password} ansible_network_os={os_type}",
+        "/Users/acas/Documents/dev/Axians/Network-Stagging-Automation/ansible/get_cisco_info_to_file.yml"
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Lis le fichier généré par le playbook
+    try:
+        with open("/Users/acas/Documents/dev/Axians/Network-Stagging-Automation/ansible/output.txt") as f:
+            lines = f.read().splitlines()
+        data = {}
+        for line in lines:
+            if ":" in line:
+                k, v = line.split(":", 1)
+                data[k.strip().lower()] = v.strip()
+        return data
+    except Exception as e:
+        return {"error": str(e), "ansible_output": result.stdout, "ansible_error": result.stderr}
 
 if __name__ == "__main__":
     app.run(debug=True)

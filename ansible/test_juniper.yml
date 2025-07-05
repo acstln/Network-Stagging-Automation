@@ -1,0 +1,25 @@
+---
+- name: Test commandes Juniper Junos
+  hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Afficher la version du switch Juniper
+      junipernetworks.junos.junos_command:
+        commands:
+          - show version
+      register: junos_result
+
+    - name: Afficher la configuration
+      junipernetworks.junos.junos_command:
+        commands:
+          - show configuration
+      register: junos_config
+
+    - name: Afficher les résultats
+      debug:
+        var: junos_result.stdout_lines
+
+    - name: Afficher la configuration
+      debug:
+        var: junos_config.stdout_lines

@@ -1,0 +1,25 @@
+.btn-collect {
+  background: #0969da !important;
+  color: #fff !important;
+  border: none !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  padding: 0.35rem 1.2rem !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  border-radius: 6px !important;
+  transition: background 0.2s;
+}
+
+.btn-collect:hover {
+  background: #1756a9 !important;
+  color: #fff !important;
+}
+
+.btn-collect:disabled {
+  background: #e0e0e0 !important;
+  color: #aaa !important;
+  border: 1px solid #ccc !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+}

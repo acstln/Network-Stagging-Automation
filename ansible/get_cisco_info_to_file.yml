@@ -1,0 +1,51 @@
+---
+- name: Récupérer infos Cisco et écrire dans un fichier
+  hosts: 192.168.254.29
+  gather_facts: no
+  vars:
+    output_file: output.txt
+
+  tasks:
+    - name: Récupérer les infos du switch
+      cisco.ios.ios_command:
+        commands:
+          - show version
+      register: version_result
+
+    - name: Afficher la sortie brute de show version
+      debug:
+        var: version_result.stdout[0]
+
+    - name: Extraire les infos (model, S/N, version) sans crash
+      set_fact:
+        switch_model: >-
+          {% set model1 = version_result.stdout[0] | regex_search('cisco (WS-\\S+)', '\\1') %}
+          {% set model2 = version_result.stdout[0] | regex_search('Model number\\s*:\\s*(\\S+)', '\\1') %}
+          {{ model1 if model1 else (model2 if model2 else 'N/A') }}
+        switch_sn: >-
+          {% set sn1 = version_result.stdout[0] | regex_search('Processor board ID ([A-Z0-9]+)', '\\1') %}
+          {% set sn2 = version_result.stdout[0] | regex_search('System serial number\\s*:\\s*(\\S+)', '\\1') %}
+          {{ sn1 if sn1 else (sn2 if sn2 else 'N/A') }}
+        switch_version: >-
+          {% if 'Version ' in version_result.stdout[0] %}
+            {{ version_result.stdout[0].split('Version ')[1].split(',')[0] }}
+          {% else %}
+            N/A
+          {% endif %}
+        switch_ip: "{{ inventory_hostname }}"
+
+    - name: Générer la ligne d'infos
+      set_fact:
+        switch_info_line: |
+          IP: {{ switch_ip }}
+          Model: {{ switch_model | default('N/A') }}
+          Serial: {{ switch_sn | default('N/A') }}
+          Version: {{ switch_version | default('N/A') }}
+
+    - name: Écrire dans le fichier local
+      local_action:
+        module: copy
+        content: "{{ switch_info_line }}\n"
+        dest: "{{ output_file }}"
+        mode: '0644'
+      delegate_to: localhost

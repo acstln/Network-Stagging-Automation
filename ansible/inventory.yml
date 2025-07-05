@@ -1,0 +1,9 @@
+all:
+  hosts:
+    192.168.254.29:
+      ansible_connection: network_cli
+      ansible_network_os: cisco.ios.ios
+      ansible_user: "admin"
+      ansible_password: "admin"
+      ansible_become: yes
+      ansible_become_method: enable

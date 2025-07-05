@@ -43,28 +43,38 @@ export default function DiscoveryResults({ scanResults, onReset }) {
             <th>IP</th>
             <th>Vendor</th>
             <th>Model</th>
+            <th>Serial</th>
             <th>Version</th>
           </tr>
         </thead>
         <tbody>
-          {scanResults.map((device, idx) => (
-            <tr key={device.ip + idx}>
-              <td style={{ textAlign: "center" }}>
+          {scanResults.map((device) => (
+            <tr key={device.ip}>
+              <td>
                 <input
                   type="checkbox"
                   checked={selected.includes(device.ip)}
                   onChange={() => toggleSelect(device.ip)}
-                  style={{ accentColor: "#0969da" }}
                 />
               </td>
-              <td className="status-cell">
-                <span className={device.status === "online" ? "online" : "offline"}>
-                  {device.status === "online" ? "Online" : "Offline"}
+              <td>
+                <span
+                  className={
+                    "status-badge " +
+                    (device.status === "online"
+                      ? "status-online"
+                      : device.status === "offline"
+                      ? "status-offline"
+                      : "status-unknown")
+                  }
+                >
+                  {device.status || "unknown"}
                 </span>
               </td>
-              <td style={{ fontFamily: "monospace" }}>{device.ip}</td>
+              <td>{device.ip || ""}</td>
               <td>{device.vendor || ""}</td>
               <td>{device.model || ""}</td>
+              <td>{device.serial || ""}</td>
               <td>{device.version || ""}</td>
             </tr>
           ))}
