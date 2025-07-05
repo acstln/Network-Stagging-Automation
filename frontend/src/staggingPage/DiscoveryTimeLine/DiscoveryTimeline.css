@@ -45,6 +45,25 @@
   box-shadow: 0 2px 6px #d0d7de55;
   left: 0rem;
 }
+
+.stepNumber.completed {
+  background: #27ae60;
+  color: #fff;
+  border: 2px solid #27ae60;
+  box-shadow: 0 2px 9px rgba(39, 174, 96, 0.55);
+}
+.stepNumber.optional {
+  border-style: dashed !important;
+  border-color: #bbb !important;
+  color: #bbb !important;
+  background: #f6f8fa !important;
+}
+.stepNumber.optional.completed {
+  background: #27ae60 !important;
+  color: #fff !important;
+  border-color: #27ae60 !important;
+  border-style: solid !important;
+}
 .step:not(:last-child):before {
   position: absolute;
   content: "";
@@ -380,4 +399,19 @@
   background: #57606a !important;
   color: #fff !important;
   border-color: #24292f !important;
+}
+
+.scan-results-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 8px;
+}
+.scan-results-table th,
+.scan-results-table td {
+  border: 1px solid #d0d7de;
+  padding: 6px 12px;
+  text-align: left;
+}
+.scan-results-table th {
+  background: #f6f8fa;
 }

@@ -1,27 +1,77 @@
-import React from "react";
+import React, { useState } from "react";
+import DataActions from "./DataActions";
+import "./DiscoveryTable.css";
 
-export default function DiscoveryResults({ scanResults }) {
+export default function DiscoveryResults({ scanResults, onReset }) {
+  const [selected, setSelected] = useState([]);
+
+  const toggleSelect = (ip) => {
+    setSelected((prev) =>
+      prev.includes(ip) ? prev.filter((item) => item !== ip) : [...prev, ip]
+    );
+  };
+
+  const selectAll = (e) => {
+    if (e.target.checked) {
+      setSelected(scanResults.map((d) => d.ip));
+    } else {
+      setSelected([]);
+    }
+  };
+
   return (
-    <div>
-      <h6>Résultats du scan :</h6>
-      <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+    <div className="discovery-table-container">
+      <div className="discovery-table-header">
+        <h6 className="discovery-table-title">Résultats du scan</h6>
+        <DataActions onReset={onReset} />
+      </div>
+      <table className="discovery-table">
         <thead>
           <tr>
-            <th style={{ textAlign: "left" }}>IP</th>
-            <th style={{ textAlign: "left" }}>Statut</th>
+            <th style={{ width: 36 }}>
+              <input
+                type="checkbox"
+                checked={
+                  selected.length === scanResults.length &&
+                  scanResults.length > 0
+                }
+                onChange={selectAll}
+                style={{ accentColor: "#0969da" }}
+              />
+            </th>
+            <th>Status</th>
+            <th>IP</th>
+            <th>Vendor</th>
+            <th>Model</th>
+            <th>Version</th>
           </tr>
         </thead>
         <tbody>
           {scanResults.map((device, idx) => (
             <tr key={device.ip + idx}>
-              <td>{device.ip}</td>
-              <td>{device.status}</td>
+              <td style={{ textAlign: "center" }}>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(device.ip)}
+                  onChange={() => toggleSelect(device.ip)}
+                  style={{ accentColor: "#0969da" }}
+                />
+              </td>
+              <td className="status-cell">
+                <span className={device.status === "online" ? "online" : "offline"}>
+                  {device.status === "online" ? "Online" : "Offline"}
+                </span>
+              </td>
+              <td style={{ fontFamily: "monospace" }}>{device.ip}</td>
+              <td>{device.vendor || ""}</td>
+              <td>{device.model || ""}</td>
+              <td>{device.version || ""}</td>
             </tr>
           ))}
         </tbody>
       </table>
       {scanResults.length === 0 && (
-        <div style={{ color: "#888", marginTop: 8 }}>
+        <div className="discovery-table-empty">
           Aucun résultat pour l’instant…
         </div>
       )}

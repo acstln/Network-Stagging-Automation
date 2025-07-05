@@ -1,10 +1,12 @@
+import React, { useState } from "react";
 import DiscoveryResults from "./DiscoveryResults/DiscoveryTable";
-import { useState } from "react";
 import StepTimeline from "./DiscoveryTimeLine/DiscoveryTimeline";
 import PresentationBlock from "./DiscoveryTimeLine/PresentationBlock";
 
 export default function StaggingPage() {
   const [scanResults, setScanResults] = useState([]);
+
+  const handleReset = () => setScanResults([]); // Reset function
 
   return (
     <div
@@ -32,7 +34,7 @@ export default function StaggingPage() {
             borderRight: "1px solid #d0d7de",
           }}
         >
-          <StepTimeline onResultsUpdate={setScanResults} />
+          <StepTimeline scanResults={scanResults} onResultsUpdate={setScanResults} />
         </div>
         {/* Bloc centre (2%) */}
         <div
@@ -53,7 +55,7 @@ export default function StaggingPage() {
             marginLeft: 1,
           }}
         >
-          <DiscoveryResults scanResults={scanResults} />
+          <DiscoveryResults scanResults={scanResults} onReset={handleReset} />
         </div>
       </div>
     </div>

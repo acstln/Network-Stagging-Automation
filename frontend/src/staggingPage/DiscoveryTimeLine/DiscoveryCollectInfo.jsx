@@ -3,7 +3,7 @@ import React from "react";
 export default function CollectInfoStep({ onCollect }) {
   return (
     <div>
-      <h5>Collect Informations</h5>
+       <h3 className="h3 is-4">Collect Informations</h3>
       <span className="stepNumber">5</span>
       <button
         className="btn btn-sm btn-collect"

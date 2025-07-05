@@ -1,7 +1,13 @@
 .subnet-form {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1.5rem;
+}
+
+.subnet-input-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .subnet-form input[type="text"] {
@@ -34,4 +40,25 @@
 .subnet-form button:disabled {
   background: #b6c7e3;
   cursor: not-allowed;
+}
+
+.subnet-input::placeholder {
+  color: #888;
+  font-size: 0.95em;
+  opacity: 1;
+  font-weight: 400;
+}
+
+.subnet-error-block {
+  min-height: 22px;
+  margin-bottom: 2px;
+  margin-top: 2px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.subnet-error-message {
+  color: #d32f2f;
+  font-size: 0.97em;
+  line-height: 1.4;
 }

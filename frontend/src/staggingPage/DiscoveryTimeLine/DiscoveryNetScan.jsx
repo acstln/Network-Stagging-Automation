@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import SubnetForm from "./DiscoverySubnetForm";
 import DiscoveryStatusMessage from "./DiscoveryStatusMessage";
 
-export default function NetScan({ defaultSubnet, onResultsUpdate }) {
+export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanResults }) {
   const [subnet, setSubnet] = useState("");
   const [loading, setLoading] = useState(false);
   const [scanId, setScanId] = useState(null);
   const [scanProgress, setScanProgress] = useState(0);
   const [scanned, setScanned] = useState(0);
   const [total, setTotal] = useState(0);
-  const [scanResults, setScanResults] = useState([]);
   const [error, setError] = useState(null);
 
   const handleDiscover = async (subnet) => {
     setLoading(true);
     setError(null);
-    setScanResults([]);
     setScanProgress(0);
     setScanned(0);
     setTotal(0);
@@ -46,7 +45,7 @@ export default function NetScan({ defaultSubnet, onResultsUpdate }) {
 
         const resResults = await fetch(`http://127.0.0.1:8000/scan/results/${scanId}`);
         const dataResults = await resResults.json();
-        setScanResults(dataResults.devices);
+        // Quand tu reçois des résultats :
         if (onResultsUpdate) {
           onResultsUpdate(dataResults.devices);
         }
@@ -65,25 +64,67 @@ export default function NetScan({ defaultSubnet, onResultsUpdate }) {
     return () => clearInterval(interval);
   }, [scanId]);
 
+  // Fonction pour stopper le scan
+  const handleStopScan = async () => {
+    if (!scanId) return;
+    try {
+      await axios.post("http://127.0.0.1:8000/scan/stop/" + scanId);
+      setLoading(false);
+      setScanId(null);
+    } catch (err) {
+      // Optionnel : afficher une erreur
+    }
+  };
+
+  const handleReset = () => {
+    setSubnet("");
+    setScanId(null);
+    setScanProgress(0);
+    setScanned(0);
+    setTotal(0);
+    setError(null);
+    if (onResultsUpdate) {
+      onResultsUpdate([]); // Vide les résultats dans le parent
+    }
+  };
+
+  // Pour la bulle :
+  const hasOnlineDevice = scanResults.some(device => device.status === "online");
+
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 32 }}>
-      <div style={{ flex: 1 }}>
-        <span className="stepNumber">1</span>
-        <SubnetForm
-          subnet={subnet}
-          setSubnet={setSubnet}
-          onDiscover={handleDiscover}
-          loading={loading}
-          defaultSubnet={defaultSubnet}
-        />
-        <DiscoveryStatusMessage
-          loading={loading}
-          error={error}
-          scanProgress={scanProgress}
-          scanned={scanned}
-          total={total}
-        />
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 2 }}>
+        <h3 className="h3 is-4" style={{ margin: 0 }}>Device Discovery</h3>
+        <span className={`stepNumber${hasOnlineDevice ? " completed" : ""}`}>1</span>
       </div>
+      {/* Formulaire de scan */}
+      <SubnetForm
+        subnet={subnet}
+        setSubnet={setSubnet}
+        onDiscover={handleDiscover}
+        loading={loading}
+        defaultSubnet={defaultSubnet}
+      />
+      {/* Barre de progression et bouton Stop */}
+      {loading && scanId && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12 }}>
+          <DiscoveryStatusMessage
+            loading={loading}
+            error={error}
+            scanProgress={scanProgress}
+            scanned={scanned}
+            total={total}
+          />
+          <button
+            type="button"
+            className="btn btn-danger btn-sm"
+            style={{ marginLeft: 8 }}
+            onClick={handleStopScan}
+          >
+            Stop Scan
+          </button>
+        </div>
+      )}
     </div>
   );
 }
