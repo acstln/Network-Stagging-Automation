@@ -49,3 +49,17 @@
         dest: "{{ output_file }}"
         mode: '0644'
       delegate_to: localhost
+
+    - name: Set collected info as stats
+      set_stats:
+        data:
+          model: "{{ switch_model }}"
+          serial: "{{ switch_sn }}"
+          version: "{{ switch_version }}"
+          
+    - name: Affiche les infos du switch
+      debug:
+        msg: |
+          model: {{ model }}
+          serial: {{ serial }}
+          version: {{ version }}

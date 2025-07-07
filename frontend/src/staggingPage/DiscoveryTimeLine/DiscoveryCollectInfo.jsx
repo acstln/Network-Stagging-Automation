@@ -1,23 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 import "./DiscoveryCollectInfo.css";
 import { collectSwitchInfo } from "../../api/collectInfo";
 
-export default function CollectInfoStep({ onCollect, disabled }) {
+export default function CollectInfoStep({ onCollect, disabled, project, onResultsUpdate }) {
+  const [loading, setLoading] = useState(false);
+
   const handleCollect = async () => {
+    if (!project?.id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     try {
-      // Replace these with actual values or get them from your state/context
-      const ip = "127.0.0.1";
-      const username = "admin";
-      const password = "password";
-      const os_type = "windows";
-
-      const data = await collectSwitchInfo(ip, username, password, os_type);
-      console.log("Collected data:", data);
-
-      // Call the onCollect prop to notify parent component
-      onCollect();
+      await fetch(`http://127.0.0.1:8000/projects/${project.id}/collect`, { method: "POST" });
+      if (onResultsUpdate) onResultsUpdate();
     } catch (error) {
       console.error("Error collecting info:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -29,9 +29,9 @@ export default function CollectInfoStep({ onCollect, disabled }) {
         className="btn btn-sm btn-collect"
         type="button"
         onClick={handleCollect}
-        disabled={disabled}
+        disabled={disabled || loading}
       >
-        Collect Informations
+        {loading ? "Collecting..." : "Collect Informations"}
       </button>
     </div>
   );

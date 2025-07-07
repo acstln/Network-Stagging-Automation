@@ -416,3 +416,61 @@
 .scan-results-table th {
   background: #f6f8fa;
 }
+
+/* Timeline styles */
+.timeline-step {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.timeline-step-circle {
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  max-width: 2.5rem;
+  max-height: 2.5rem;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.3rem;
+  color: #0969da;
+  border-radius: 50%;
+  background: #f6f8fa;
+  border: 2px solid #0969da;
+  box-shadow: 0 2px 6px #d0d7de55;
+  margin-right: 1rem;
+}
+
+.timeline-step-content {
+  flex: 1;
+  padding: 0.5rem 0;
+  border-left: 2px solid #d0d7de;
+}
+
+.timeline-step-content:first-child {
+  border-left: none;
+}
+
+.timeline-step.completed .timeline-step-circle {
+  background: #27ae60;
+  color: #fff;
+  border: 2px solid #27ae60;
+  box-shadow: 0 2px 9px rgba(39, 174, 96, 0.55);
+}
+
+.timeline-step.optional .timeline-step-circle {
+  border-style: dashed;
+  border-color: #bbb;
+  color: #bbb;
+  background: #f6f8fa;
+}
+
+.timeline-step.optional.completed .timeline-step-circle {
+  background: #27ae60;
+  color: #fff;
+  border-color: #27ae60;
+  border-style: solid;
+}

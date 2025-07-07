@@ -68,3 +68,34 @@
   margin-top: 12px;
   font-size: 14px;
 }
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 90px;
+  height: 36px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  padding: 0 18px;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.action-btn--delete {
+  background: #cf222e;
+  color: #fff;
+}
+
+.action-btn--dark {
+  background: #22272e;
+  color: #fff;
+}
+
+.action-btn:disabled {
+  background: #22272e;
+  color: #888;
+  cursor: not-allowed;
+}

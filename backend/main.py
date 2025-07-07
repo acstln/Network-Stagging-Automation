@@ -14,6 +14,7 @@ from sqlmodel import Session, select
 from backend.bdd.models import Project, Device
 from backend.bdd.database import engine, init_db
 from typing import List
+import os
 
 app = FastAPI()
 init_db()
@@ -166,12 +167,13 @@ def parse_ip_range(subnet):
 
 @app.post("/collect_info")
 def collect_info(ip: str = Body(...), username: str = Body(...), password: str = Body(...), os_type: str = Body(...)):
+    playbook_path = os.path.join(os.path.dirname(__file__), "../ansible/get_cisco_info_to_file.yml")
     # Appelle le playbook Ansible en ligne de commande
     cmd = [
         "ansible-playbook",
         "-i", f"{ip},",  # virgule pour inventaire inline
         "--extra-vars", f"ansible_user={username} ansible_password={password} ansible_network_os={os_type}",
-        "/Users/acas/Documents/dev/Axians/Network-Stagging-Automation/ansible/get_cisco_info_to_file.yml"
+        playbook_path
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
     # Lis le fichier généré par le playbook
@@ -238,6 +240,55 @@ def delete_device(device_id: int = Path(...)):
             session.delete(device)
             session.commit()
         return {"ok": True}
+
+@app.post("/projects/{project_id}/collect")
+def collect_info(project_id: int):
+    import os
+    playbook_path = os.path.join(os.path.dirname(__file__), "../ansible/get_cisco_info_to_file.yml")
+
+    with Session(engine) as session:
+        devices = session.exec(
+            select(Device).where(Device.project_id == project_id, Device.status == "online")
+        ).all()
+        for device in devices:
+            result = subprocess.run(
+                [
+                    "ansible-playbook",
+                    playbook_path,
+                    "-i", f"{device.ip},",
+                ],
+                capture_output=True,
+                text=True
+            )
+            print(f"=== Ansible stdout for {device.ip} ===")
+            print(result.stdout)
+            print(f"=== Ansible stderr for {device.ip} ===")
+            print(result.stderr)
+            # Parse la sortie standard pour trouver model, serial, version
+            for line in result.stdout.splitlines():
+                if "model:" in line.lower():
+                    device.model = line.split(":", 1)[1].strip()
+                if "serial:" in line.lower():
+                    device.serial = line.split(":", 1)[1].strip()
+                if "version:" in line.lower():
+                    device.version = line.split(":", 1)[1].strip()
+            session.add(device)
+        session.commit()
+    return {"ok": True}
+
+@app.patch("/devices/{device_id}")
+def patch_device(device_id: int, data: dict = Body(...)):
+    with Session(engine) as session:
+        device = session.get(Device, device_id)
+        if not device:
+            return {"error": "Device not found"}
+        if "os" in data:
+            device.os = data["os"]
+        if "vendor" in data:
+            device.vendor = data["vendor"]
+        session.add(device)
+        session.commit()
+        return device.dict()
 
 if __name__ == "__main__":
     import uvicorn

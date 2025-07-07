@@ -1,0 +1,75 @@
+.data-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 90px;
+  height: 30px;         /* Hauteur réduite */
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #24292f;
+  padding: 0 14px;      /* Padding horizontal réduit pour l'équilibre */
+  transition: background 0.2s, border 0.2s;
+  cursor: pointer;
+  margin: 0 4px;
+}
+
+.action-btn--dark {
+  background: #f6f8fa;
+  color: #24292f;
+}
+
+.action-btn--delete {
+  background: #f6f8fa;
+  color: #cf222e;
+  border: 1px solid #cf222e;
+}
+
+.action-btn:disabled,
+.action-btn[disabled] {
+  background: #f6f8fa;
+  color: #888;
+  border: 1px solid #d0d7de;
+  cursor: not-allowed;
+}
+
+.set-os-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.set-os-dropdown {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  z-index: 10;
+  min-width: 140px;
+  padding: 0;
+}
+
+.set-os-option {
+  padding: 8px 16px;
+  cursor: pointer;
+  color: #24292f;
+  background: #fff;
+  font-weight: 400;
+  transition: background 0.15s;
+}
+
+.set-os-option.selected,
+.set-os-option:hover {
+  background: #e7f3ff;
+  font-weight: 600;
+}

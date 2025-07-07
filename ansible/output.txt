@@ -1,4 +1,0 @@
-IP: 192.168.254.29
-Model:   ['WS-C3850-12X48U']
-Serial:   ['FOC2317X0XR']
-Version:   16.3.9

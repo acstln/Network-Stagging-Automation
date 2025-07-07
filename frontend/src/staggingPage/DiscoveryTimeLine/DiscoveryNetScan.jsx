@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import DiscoverySubnetForm from "./DiscoverySubnetForm";
 import DiscoveryStatusMessage from "./DiscoveryStatusMessage";
 
+
 export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanResults, completed, project }) {
+  const [subnet, setSubnet] = useState("");
   const [loading, setLoading] = useState(false);
   const [scanId, setScanId] = useState(null);
   const [scanProgress, setScanProgress] = useState(0);
   const [scanned, setScanned] = useState(0);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState(null);
+  const [scanSaved, setScanSaved] = useState(false);
 
-  // Lance le scan
   const handleDiscover = async (subnet) => {
-    if (!project) {
-      setError("Aucun projet sélectionné");
-      return;
-    }
     setLoading(true);
     setError(null);
     setScanProgress(0);
@@ -25,7 +24,7 @@ export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanR
       const res = await fetch("http://127.0.0.1:8000/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subnet, project_id: project.id }),
+        body: JSON.stringify({ subnet, project_id: project.id }), // <-- ajoute project_id ici
       });
       if (!res.ok) throw new Error("Erreur lors du lancement du scan");
       const data = await res.json();
@@ -36,50 +35,67 @@ export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanR
     }
   };
 
-  // Polling pour la progression et MAJ du tableau en live
   useEffect(() => {
     if (!scanId) return;
-    setLoading(true);
     const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`http://127.0.0.1:8000/scan/progress/${scanId}`);
-        const data = await res.json();
-        setScanProgress(data.progress);
-        setScanned(data.scanned);
-        setTotal(data.total);
+      const res = await fetch(`http://127.0.0.1:8000/scan/progress/${scanId}`);
+      const data = await res.json();
+      setScanProgress(data.progress);
+      setScanned(data.scanned);
+      setTotal(data.total);
 
-        if (onResultsUpdate) onResultsUpdate();
+      // Rafraîchir le tableau à chaque tick
+      if (onResultsUpdate) onResultsUpdate();
 
-        if (data.progress >= 100) {
-          clearInterval(interval);
-          setLoading(false);
-          setScanId(null); // <-- AJOUTE CETTE LIGNE
-        }
-      } catch (err) {
-        setError("Erreur lors du suivi du scan");
+      if (data.progress >= 100) {
         clearInterval(interval);
         setLoading(false);
-        setScanId(null); // <-- AJOUTE CETTE LIGNE aussi ici
+        setScanId(null);
       }
     }, 1000);
     return () => clearInterval(interval);
   }, [scanId, onResultsUpdate]);
 
-  // Bouton stop scan (optionnel)
+  // Fonction pour stopper le scan
   const handleStopScan = async () => {
     if (!scanId) return;
     try {
-      await fetch(`http://127.0.0.1:8000/scan/stop/${scanId}`, { method: "POST" });
+      await axios.post("http://127.0.0.1:8000/scan/stop/" + scanId);
       setLoading(false);
       setScanId(null);
+      // Ajoute un petit délai avant le refresh
+      setTimeout(() => {
+        if (onResultsUpdate) onResultsUpdate();
+      }, 500); // 500ms, ajuste si besoin
     } catch (err) {
-      setError("Erreur lors de l'arrêt du scan");
+      // Optionnel : afficher une erreur
     }
   };
 
+  const handleReset = () => {
+    setSubnet("");
+    setScanId(null);
+    setScanProgress(0);
+    setScanned(0);
+    setTotal(0);
+    setError(null);
+    if (onResultsUpdate) {
+      onResultsUpdate([]); // Vide les résultats dans le parent
+    }
+  };
+
+  // Affiche TOUJOURS le formulaire
   return (
     <div>
-      <h5>1. Scan réseau</h5>
+      <div className="credentials-header">
+        <h3 className="h3 is-4" style={{ margin: 0 }}>Scan réseau</h3>
+        {error && (
+          <div className="credentials-message" style={{ background: "#ffdce0", color: "#cf222e", border: "1px solid #ffb3b3" }}>
+            {error}
+          </div>
+        )}
+      </div>
+      <span className={`stepNumber${completed ? " completed" : ""}`}>1</span>
       <DiscoverySubnetForm
         onDiscover={handleDiscover}
         loading={loading}

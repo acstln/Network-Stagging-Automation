@@ -53,9 +53,6 @@ export default function StepTimeline({ scanResults, onResultsUpdate, project }) 
   return (
     <div className="staggingTimeLine" style={{ margin: "48px auto 0 auto", display: "flex", gap: 32 }}>
       <div style={{ flex: 1 }}>
-        <div className="timeLine__heading">
-          <h4>Staging Steps</h4>
-        </div>
         <div className="step">
           <DiscoveryNetScan
             defaultSubnet="192.168.254.64/28"
@@ -69,7 +66,7 @@ export default function StepTimeline({ scanResults, onResultsUpdate, project }) 
           <DiscoveryCredentials onSubmit={setCredentials} completed={isCredentialsCompleted} />
         </div>
         <div className="step">
-          <DiscoveryDeviceType onDeviceTypeSelected={handleDeviceTypeSelected} completed={isDeviceTypeCompleted} />
+          <DiscoveryDeviceType devices={scanResults} onDeviceTypeSelected={handleDeviceTypeSelected} completed={isDeviceTypeCompleted} />
         </div>
         <div className="step">
           <DiscoverySoftwareUpload onUpload={() => {}} />
@@ -78,6 +75,8 @@ export default function StepTimeline({ scanResults, onResultsUpdate, project }) 
           <DiscoveryCollectInfo
             onCollect={handleCollectInfo}
             disabled={!allStepsCompleted}
+            project={project}
+            onResultsUpdate={onResultsUpdate}
           />
         </div>
       </div>
