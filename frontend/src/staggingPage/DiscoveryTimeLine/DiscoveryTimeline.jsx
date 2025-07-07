@@ -7,7 +7,7 @@ import DiscoverySoftwareUpload from "./DiscoverySoftwareUpload";
 import DiscoveryCollectInfo from "./DiscoveryCollectInfo";
 import { collectSwitchInfo } from "../../api/collectInfo";
 
-export default function StepTimeline({ scanResults, onResultsUpdate }) {
+export default function StepTimeline({ scanResults, onResultsUpdate, project }) {
   const [credentials, setCredentials] = useState(null);
   const [deviceType, setDeviceType] = useState([]);
 
@@ -62,6 +62,7 @@ export default function StepTimeline({ scanResults, onResultsUpdate }) {
             onResultsUpdate={onResultsUpdate}
             scanResults={scanResults}
             completed={isDiscoveryCompleted}
+            project={project}
           />
         </div>
         <div className="step">

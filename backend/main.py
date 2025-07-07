@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Body
+from fastapi import FastAPI, Query, Body, HTTPException, Path
 from fastapi.middleware.cors import CORSMiddleware
 from pythonping import ping
 import ipaddress
@@ -10,13 +10,18 @@ from pydantic import BaseModel
 import re
 import subprocess
 import json
+from sqlmodel import Session, select
+from backend.bdd.models import Project, Device
+from backend.bdd.database import engine, init_db
+from typing import List
 
 app = FastAPI()
+init_db()
 
 # 👉 CORS pour autoriser React à appeler FastAPI
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # à restreindre en prod
+    allow_origins=["*"],  # ou ["http://localhost:5173"] si tu veux restreindre
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -26,7 +31,7 @@ scan_progress = {}  # {scan_id: {"progress": int, "scanned": int, "total": int}}
 scan_results = {}  # {scan_id: [{"ip": "x.x.x.x", "status": "online/offline"}, ...]}
 stop_flags = {}  # <-- Ajouté pour gérer l'arrêt du scan
 
-def scan_network(scan_id, subnet):
+def scan_network(scan_id, subnet, project_id):
     try:
         ips = parse_ip_range(subnet)
         if ips:
@@ -40,6 +45,7 @@ def scan_network(scan_id, subnet):
         for idx, ip in enumerate(hosts):
             if stop_event and stop_event.is_set():
                 break
+            # Ping l'IP
             response = ping(str(ip), count=1, timeout=1)
             status = "online" if response.success() else "offline"
             results.append({"ip": str(ip), "status": status})
@@ -50,13 +56,26 @@ def scan_network(scan_id, subnet):
                 "total": total
             }
             scan_results[scan_id] = results.copy()
-        scan_progress[scan_id] = {
-            "progress": 100,
-            "scanned": len(results),
-            "total": total
-        }
-        scan_results[scan_id] = results
-    except Exception:
+
+            # Ajoute ou met à jour en base à chaque résultat
+            with Session(engine) as session:
+                device = session.exec(
+                    select(Device).where(Device.project_id == project_id, Device.ip == str(ip))
+                ).first()
+                if device:
+                    if device.status != status:
+                        device.status = status  # Met à jour le status si changé
+                        session.add(device)
+                else:
+                    device = Device(
+                        ip=str(ip),
+                        status=status,
+                        project_id=project_id
+                    )
+                    session.add(device)
+                session.commit()
+    except Exception as e:
+        print("Erreur dans le scan:", e)
         scan_progress[scan_id] = {
             "progress": 100,
             "scanned": 0,
@@ -96,14 +115,16 @@ def discover(subnet: str = Query(...)):
 
 class ScanRequest(BaseModel):
     subnet: str
+    project_id: int  # <-- ajoute cette ligne
 
 @app.post('/scan')
 def start_scan(req: ScanRequest):
     subnet = req.subnet
+    project_id = req.project_id
     scan_id = str(uuid.uuid4())
     scan_progress[scan_id] = 0
-    stop_flags[scan_id] = threading.Event()  # <-- Initialise le flag d'arrêt
-    threading.Thread(target=scan_network, args=(scan_id, subnet)).start()
+    stop_flags[scan_id] = threading.Event()
+    threading.Thread(target=scan_network, args=(scan_id, subnet, project_id)).start()  # <-- passe project_id
     return {"scan_id": scan_id}
 
 @app.post('/scan/stop/{scan_id}')
@@ -166,5 +187,58 @@ def collect_info(ip: str = Body(...), username: str = Body(...), password: str =
     except Exception as e:
         return {"error": str(e), "ansible_output": result.stdout, "ansible_error": result.stderr}
 
+@app.post("/projects/", response_model=Project)
+def create_project(project: Project):
+    with Session(engine) as session:
+        session.add(project)
+        session.commit()
+        session.refresh(project)
+        return project  # <-- c'est ce qui renvoie l'id généré
+
+@app.post("/devices/", response_model=Device)
+def create_device(device: Device):
+    with Session(engine) as session:
+        session.add(device)
+        session.commit()
+        session.refresh(device)
+        return device
+
+@app.get("/projects/", response_model=List[Project])
+def list_projects():
+    with Session(engine) as session:
+        return session.exec(select(Project)).all()
+
+@app.get("/projects/{project_id}", response_model=Project)
+def get_project(project_id: int):
+    with Session(engine) as session:
+        project = session.get(Project, project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        return project
+
+@app.get("/devices")
+def list_devices():
+    with Session(engine) as session:
+        devices = session.exec(select(Device)).all()
+        return [d.dict() for d in devices]
+
+@app.get("/projects/{project_id}/devices")
+def get_project_devices(project_id: int):
+    with Session(engine) as session:
+        devices = session.exec(
+            select(Device).where(Device.project_id == project_id)
+        ).all()
+        return [d.dict() for d in devices]
+
+@app.delete("/devices/{device_id}")
+def delete_device(device_id: int = Path(...)):
+    with Session(engine) as session:
+        device = session.get(Device, device_id)
+        if device:
+            session.delete(device)
+            session.commit()
+        return {"ok": True}
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

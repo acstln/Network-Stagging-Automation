@@ -1,7 +1,8 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import logo from "../../medias/logo_netax_long.png";
 
-export default function TopBar({ setPage }) {
+export default function TopBar() {
   return (
     <header
       className="Header"
@@ -21,30 +22,31 @@ export default function TopBar({ setPage }) {
         style={{ height: 56, width: "100%" }}
       >
         <div className="d-flex flex-items-center" style={{ marginLeft: 24 }}>
-          <img
-            src={logo}
-            alt="Logo"
-            width={150}
-            style={{ borderRadius: 4, cursor: "pointer" }}
-            onClick={() => setPage("home")}
-          />
+          <Link to="/">
+            <img
+              src={logo}
+              alt="Logo"
+              width={150}
+              style={{ borderRadius: 4, cursor: "pointer" }}
+            />
+          </Link>
           <nav className="d-flex flex-items-center ml-4">
-            <button className="Header-link mr-3" onClick={() => setPage("home")}>
-              Home
-            </button>
-            <button className="Header-link mr-3" onClick={() => setPage("stagging")}>
-              Stagging
-            </button>
-            <button className="Header-link" onClick={() => setPage("software")}>
-              Software
-            </button>
+            <Link to="/">
+              <button className="Header-link mr-3">Home</button>
+            </Link>
+            <Link to="/stagging">
+              <button className="Header-link mr-3">Stagging</button>
+            </Link>
+            <Link to="/software">
+              <button className="Header-link">Software</button>
+            </Link>
           </nav>
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ marginRight: 24 }}>
-          <button className="Header-link" onClick={() => setPage("help")}>
-            Help
-          </button>
+          <Link to="/help">
+            <button className="Header-link">Help</button>
+          </Link>
         </div>
       </div>
     </header>

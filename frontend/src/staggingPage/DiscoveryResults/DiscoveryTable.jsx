@@ -1,29 +1,55 @@
 import React, { useState } from "react";
-import DataActions from "./DataActions";
 import "./DiscoveryTable.css";
 
-export default function DiscoveryResults({ scanResults, onReset }) {
+export default function DiscoveryTable({ scanResults = [], onReset }) {
   const [selected, setSelected] = useState([]);
 
-  const toggleSelect = (ip) => {
+  const selectAll = () => {
+    if (selected.length === scanResults.length) {
+      setSelected([]);
+    } else {
+      setSelected(scanResults.map((d) => d.id));
+    }
+  };
+
+  const toggleSelect = (id) => {
     setSelected((prev) =>
-      prev.includes(ip) ? prev.filter((item) => item !== ip) : [...prev, ip]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
-  const selectAll = (e) => {
-    if (e.target.checked) {
-      setSelected(scanResults.map((d) => d.ip));
-    } else {
-      setSelected([]);
-    }
+  const handleDelete = async () => {
+    if (selected.length === 0) return;
+    // Appel API pour supprimer chaque device sélectionné
+    await Promise.all(
+      selected.map((id) =>
+        fetch(`http://127.0.0.1:8000/devices/${id}`, { method: "DELETE" })
+      )
+    );
+    setSelected([]);
+    if (onReset) onReset(); // Rafraîchit la liste sans reload la page
   };
 
   return (
     <div className="discovery-table-container">
       <div className="discovery-table-header">
         <h6 className="discovery-table-title">Résultats du scan</h6>
-        <DataActions onReset={onReset} />
+        <button
+          onClick={handleDelete}
+          disabled={selected.length === 0}
+          style={{
+            background: selected.length === 0 ? "#ccc" : "#cf222e",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+            padding: "6px 18px",
+            fontWeight: 600,
+            cursor: selected.length === 0 ? "not-allowed" : "pointer",
+            marginLeft: 12,
+          }}
+        >
+          Delete
+        </button>
       </div>
       <table className="discovery-table">
         <thead>
@@ -49,12 +75,12 @@ export default function DiscoveryResults({ scanResults, onReset }) {
         </thead>
         <tbody>
           {scanResults.map((device) => (
-            <tr key={device.ip}>
+            <tr key={device.id}>
               <td>
                 <input
                   type="checkbox"
-                  checked={selected.includes(device.ip)}
-                  onChange={() => toggleSelect(device.ip)}
+                  checked={selected.includes(device.id)}
+                  onChange={() => toggleSelect(device.id)}
                 />
               </td>
               <td>

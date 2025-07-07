@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./DiscoverySubnetForm.css";
 
-export default function SubnetForm({ onDiscover, loading }) {
+export default function DiscoverySubnetForm({ onDiscover, loading }) {
   const [subnet, setSubnet] = useState("");
   const [error, setError] = useState("");
 

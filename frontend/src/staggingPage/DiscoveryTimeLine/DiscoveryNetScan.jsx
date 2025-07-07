@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import SubnetForm from "./DiscoverySubnetForm";
+import DiscoverySubnetForm from "./DiscoverySubnetForm";
 import DiscoveryStatusMessage from "./DiscoveryStatusMessage";
 
-export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanResults }) {
-  const [subnet, setSubnet] = useState("");
+export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanResults, completed, project }) {
   const [loading, setLoading] = useState(false);
   const [scanId, setScanId] = useState(null);
   const [scanProgress, setScanProgress] = useState(0);
@@ -12,7 +10,12 @@ export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanR
   const [total, setTotal] = useState(0);
   const [error, setError] = useState(null);
 
+  // Lance le scan
   const handleDiscover = async (subnet) => {
+    if (!project) {
+      setError("Aucun projet sélectionné");
+      return;
+    }
     setLoading(true);
     setError(null);
     setScanProgress(0);
@@ -22,7 +25,7 @@ export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanR
       const res = await fetch("http://127.0.0.1:8000/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subnet }),
+        body: JSON.stringify({ subnet, project_id: project.id }),
       });
       if (!res.ok) throw new Error("Erreur lors du lancement du scan");
       const data = await res.json();
@@ -33,8 +36,10 @@ export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanR
     }
   };
 
+  // Polling pour la progression et MAJ du tableau en live
   useEffect(() => {
     if (!scanId) return;
+    setLoading(true);
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`http://127.0.0.1:8000/scan/progress/${scanId}`);
@@ -43,87 +48,66 @@ export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanR
         setScanned(data.scanned);
         setTotal(data.total);
 
-        const resResults = await fetch(`http://127.0.0.1:8000/scan/results/${scanId}`);
-        const dataResults = await resResults.json();
-        // Quand tu reçois des résultats :
-        if (onResultsUpdate) {
-          onResultsUpdate(dataResults.devices);
-        }
+        if (onResultsUpdate) onResultsUpdate();
 
         if (data.progress >= 100) {
           clearInterval(interval);
           setLoading(false);
-          setScanId(null);
+          setScanId(null); // <-- AJOUTE CETTE LIGNE
         }
       } catch (err) {
-        setError("Erreur lors du polling");
-        setLoading(false);
+        setError("Erreur lors du suivi du scan");
         clearInterval(interval);
+        setLoading(false);
+        setScanId(null); // <-- AJOUTE CETTE LIGNE aussi ici
       }
-    }, 500);
+    }, 1000);
     return () => clearInterval(interval);
-  }, [scanId]);
+  }, [scanId, onResultsUpdate]);
 
-  // Fonction pour stopper le scan
+  // Bouton stop scan (optionnel)
   const handleStopScan = async () => {
     if (!scanId) return;
     try {
-      await axios.post("http://127.0.0.1:8000/scan/stop/" + scanId);
+      await fetch(`http://127.0.0.1:8000/scan/stop/${scanId}`, { method: "POST" });
       setLoading(false);
       setScanId(null);
     } catch (err) {
-      // Optionnel : afficher une erreur
+      setError("Erreur lors de l'arrêt du scan");
     }
   };
-
-  const handleReset = () => {
-    setSubnet("");
-    setScanId(null);
-    setScanProgress(0);
-    setScanned(0);
-    setTotal(0);
-    setError(null);
-    if (onResultsUpdate) {
-      onResultsUpdate([]); // Vide les résultats dans le parent
-    }
-  };
-
-  // Pour la bulle :
-  const hasOnlineDevice = scanResults.some(device => device.status === "online");
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 2 }}>
-        <h3 className="h3 is-4" style={{ margin: 0 }}>Device Discovery</h3>
-        <span className={`stepNumber${hasOnlineDevice ? " completed" : ""}`}>1</span>
-      </div>
-      {/* Formulaire de scan */}
-      <SubnetForm
-        subnet={subnet}
-        setSubnet={setSubnet}
+      <h5>1. Scan réseau</h5>
+      <DiscoverySubnetForm
         onDiscover={handleDiscover}
         loading={loading}
-        defaultSubnet={defaultSubnet}
       />
-      {/* Barre de progression et bouton Stop */}
-      {loading && scanId && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12 }}>
-          <DiscoveryStatusMessage
-            loading={loading}
-            error={error}
-            scanProgress={scanProgress}
-            scanned={scanned}
-            total={total}
-          />
-          <button
-            type="button"
-            className="btn btn-danger btn-sm"
-            style={{ marginLeft: 8 }}
-            onClick={handleStopScan}
-          >
-            Stop Scan
-          </button>
-        </div>
+      <DiscoveryStatusMessage
+        loading={loading}
+        error={error}
+        scanProgress={scanProgress}
+        scanned={scanned}
+        total={total}
+      />
+      {loading && (
+        <button
+          type="button"
+          style={{
+            marginTop: 12,
+            background: "#cf222e",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+            padding: "6px 18px",
+            fontWeight: 600,
+            cursor: "pointer"
+          }}
+          onClick={handleStopScan}
+        >
+          Stop Scan
+        </button>
       )}
     </div>
   );
