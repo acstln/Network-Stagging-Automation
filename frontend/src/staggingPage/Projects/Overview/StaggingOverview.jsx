@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import DiscoveryTable from "./DiscoveryResults/DiscoveryTable";
 import DiscoveryTimeline from "./DiscoveryTimeLine/DiscoveryTimeline";
 import PresentationBlock from "./DiscoveryTimeLine/PresentationBlock";
+import StaggingMainContainer from "../common/StaggingMainContainer";
 
 export default function StaggingOverview({ project }) {
   const [scanResults, setScanResults] = useState([]);
@@ -19,26 +20,23 @@ export default function StaggingOverview({ project }) {
   }, [project]);
 
   return (
-    <div
-      id="stagging-main-container"
-      style={{ minHeight: "100vh", marginTop: 10 }}
-    >
+    <StaggingMainContainer>
       <PresentationBlock />
       <div
         style={{
           display: "flex",
           alignItems: "stretch",
-          width: "90vw",
+          width: "100%",
           margin: "0 auto",
           minHeight: 400,
         }}
       >
-        {/* Bloc gauche (40%) */}
+        {/* Bloc gauche */}
         <div
           id="discoveryTimeline"
           style={{
-            flex: "0 0 39%",
-            maxWidth: "39%",
+            flex: "0 0 40%",
+            maxWidth: "40%",
             padding: 24,
             minHeight: 400,
             borderRight: "1px solid #d0d7de",
@@ -50,20 +48,20 @@ export default function StaggingOverview({ project }) {
             project={project}
           />
         </div>
-        {/* Bloc centre (2%) */}
+        {/* Espace */}
         <div
           style={{
-            flex: "0 0 1%",
-            maxWidth: "1%",
+            flex: "0 0 3%",
+            maxWidth: "3%",
             minHeight: 400,
           }}
         />
-        {/* Bloc droit (59%) */}
+        {/* Bloc droit */}
         <div
           id="discoveryResults"
           style={{
-            flex: "0 0 60%",
-            maxWidth: "60%",
+            flex: "0 0 57%",
+            maxWidth: "57%",
             padding: 24,
             minHeight: 400,
             marginLeft: 1,
@@ -72,6 +70,6 @@ export default function StaggingOverview({ project }) {
           <DiscoveryTable scanResults={scanResults} onReset={fetchDevices} />
         </div>
       </div>
-    </div>
+    </StaggingMainContainer>
   );
 }

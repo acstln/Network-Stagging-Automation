@@ -1,14 +1,14 @@
 import React from "react";
+import "./StaggingDevices.css";
 
 export default function StaggingDevices({ devices }) {
   if (!devices || devices.length === 0) {
-    return <div>Aucun device pour ce projet.</div>;
+    return <div style={{ padding: 32, textAlign: "center" }}>Aucun device pour ce projet.</div>;
   }
 
   return (
-    <div>
-      <h3>Liste des devices du projet</h3>
-      <table style={{ width: "100%" }}>
+    <div className="devices-table-container">
+      <table className="devices-table">
         <thead>
           <tr>
             <th>IP</th>

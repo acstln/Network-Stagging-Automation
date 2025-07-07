@@ -1,0 +1,93 @@
+body {
+  overflow-x: hidden;
+}
+
+.project-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: #f6f8fa;
+  border-bottom: 1px solid #e5e7eb; /* <-- ligne sous la navbar */
+  padding: 0 32px 0 18px;
+  height: 36px; /* légèrement augmenté */
+  position: fixed;
+  top: 88px; /* hauteur de la topbar */
+  left: 0;
+  width: 100vw;
+  z-index: 100;
+  margin-left: 0;
+}
+
+.project-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.project-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent; /* Toujours transparent sauf actif */
+  color: #23272f;
+  font-size: 1.08rem;
+  font-weight: 500;
+  padding: 0 18px;
+  height: 36px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-bottom 0.18s;
+  outline: none;
+  border-radius: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.project-tab.active {
+  background: #fff;
+  color: #23272f;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid #fff;
+  /* Ajoute ce box-shadow pour masquer la ligne sous l'onglet actif */
+  box-shadow: 0 1px 0 0 #fff, 0 -2px 8px 0 rgba(0,0,0,0.02);
+}
+
+.project-tab:not(.active):hover {
+  background: #ececec;
+  color: #23272f;
+  border-bottom: 2px solid transparent;
+  border-radius: 8px 8px 0 0; /* <-- coins arrondis au hover */
+}
+
+.project-tab-back {
+  background: none;
+  border: none;
+  color: #23272f;
+  font-size: 1.35rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0 8px 0 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.18s;
+}
+
+.project-name-navbar {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #23272f;
+  margin-right: 18px;
+  margin-left: 2px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.project-content {
+  margin: auto auto;
+  padding-top: 36px; /* hauteur de la navbar */
+}
+
+.project-title {
+  margin-top: 0;
+  margin-bottom: 24px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #23272f;
+}

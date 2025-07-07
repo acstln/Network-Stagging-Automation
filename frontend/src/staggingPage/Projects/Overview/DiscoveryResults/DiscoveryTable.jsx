@@ -14,6 +14,7 @@ export default function DiscoveryTable({ scanResults = [], onReset }) {
   const [selected, setSelected] = useState([]);
   const [showOsMenu, setShowOsMenu] = useState(false);
   const [selectedOs, setSelectedOs] = useState(OS_OPTIONS[0].os);
+  const [showProvisionedPopup, setShowProvisionedPopup] = useState(false);
   const osBtnRef = useRef(null);
 
   const selectAll = () => {
@@ -44,6 +45,13 @@ export default function DiscoveryTable({ scanResults = [], onReset }) {
   const handleSetOs = async (osObj) => {
     setShowOsMenu(false);
     if (!osObj) return;
+    const provisioned = selected
+      .map((id) => scanResults.find((d) => d.id === id))
+      .find((d) => d && d.model && d.serial);
+    if (provisioned) {
+      setShowProvisionedPopup(true);
+      return;
+    }
     await Promise.all(
       selected.map((id) =>
         fetch(`http://127.0.0.1:8000/devices/${id}`, {
@@ -53,7 +61,9 @@ export default function DiscoveryTable({ scanResults = [], onReset }) {
         })
       )
     );
-    if (onReset) onReset();
+    setTimeout(() => {
+      if (onReset) onReset();
+    }, 400);
   };
 
   // Ferme le menu si on clique ailleurs
@@ -69,10 +79,23 @@ export default function DiscoveryTable({ scanResults = [], onReset }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showOsMenu]);
 
+  function isProvisioned(device) {
+    return !!device.model && !!device.serial;
+  }
+
   return (
     <div className="discovery-table-container">
-      <div className="discovery-table-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h6 className="discovery-table-title" style={{ margin: 0 }}>Scanned Devices</h6>
+      <div
+        className="discovery-table-header"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <h6 className="discovery-table-title" style={{ margin: 0 }}>
+          Scanned Devices
+        </h6>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <DataActions
             selected={selected}
@@ -145,6 +168,26 @@ export default function DiscoveryTable({ scanResults = [], onReset }) {
       {scanResults.length === 0 && (
         <div className="discovery-table-empty">
           Aucun résultat pour l’instant…
+        </div>
+      )}
+      {showProvisionedPopup && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Device Already Provisioned</h3>
+            <p>
+              One or more of the selected devices is already provisioned.
+              <br />
+              If you need to change a provisioned device, please delete it first
+              and then add it again to restart the process.
+            </p>
+            <button
+              className="btn btn-sm btn-collect"
+              onClick={() => setShowProvisionedPopup(false)}
+              style={{ marginTop: 16 }}
+            >
+              OK
+            </button>
+          </div>
         </div>
       )}
     </div>

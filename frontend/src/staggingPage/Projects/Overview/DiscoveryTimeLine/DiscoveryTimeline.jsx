@@ -5,11 +5,17 @@ import DiscoveryCredentials from "./DiscoveryCredentials";
 import DiscoveryDeviceType from "./DiscoveryDeviceType";
 import DiscoverySoftwareUpload from "./DiscoverySoftwareUpload";
 import DiscoveryCollectInfo from "./DiscoveryCollectInfo";
-import { collectSwitchInfo } from "../../api/collectInfo";
+import { collectSwitchInfo } from "../../../api/collectInfo";
 
 export default function StepTimeline({ scanResults, onResultsUpdate, project }) {
   const [credentials, setCredentials] = useState(null);
   const [deviceType, setDeviceType] = useState([]);
+  const [stepsCompleted, setStepsCompleted] = useState({
+    credentials: false,
+    subnet: false,
+    vendor: false,
+    collect: false,
+  });
 
   // Etape 1 : Discovery OK si au moins un device online
   const isDiscoveryCompleted = scanResults && scanResults.some((d) => d.status === "online");
@@ -19,35 +25,61 @@ export default function StepTimeline({ scanResults, onResultsUpdate, project }) 
   const isDeviceTypeCompleted = deviceType && deviceType.length > 0;
 
   // Toutes les étapes (hors upload) doivent être completed
-  const allStepsCompleted = isDiscoveryCompleted && isCredentialsCompleted && isDeviceTypeCompleted;
+  const allDevicesHaveInfo = scanResults && scanResults.length > 0 && scanResults.every(
+    d => d.model && d.serial && d.version
+  );
+  const allDevicesHaveOs = scanResults && scanResults.length > 0 && scanResults.every(
+    d => d.os
+  );
+  const allStepsCompleted = isDiscoveryCompleted && isCredentialsCompleted && isDeviceTypeCompleted && allDevicesHaveOs;
 
   const handleDeviceTypeSelected = (models) => {
     setDeviceType(models);
   };
 
   const handleCollectInfo = async () => {
-    // Choisis l'IP à collecter (exemple : le premier device online)
-    const selectedDevice = scanResults.find(d => d.status === "online");
-    if (!selectedDevice || !credentials || !deviceType.length) return;
-
-    // Récupère l'OS détecté pour ce device
-    const selectedOs = deviceType[0].os; // ou adapte selon ton modèle
-    try {
-      const info = await collectSwitchInfo(
-        selectedDevice.ip,
-        credentials.username,
-        credentials.password,
-        selectedOs
-      );
-      // Mets à jour le tableau
-      onResultsUpdate(scanResults.map(d =>
-        d.ip === selectedDevice.ip
-          ? { ...d, model: info.model, serial: info.serial, version: info.version }
-          : d
-      ));
-    } catch (e) {
-      alert("Erreur lors de la collecte : " + e.message);
+    if (!credentials || !credentials.username || !credentials.password) {
+      alert("Please enter credentials first.");
+      return;
     }
+    const res = await fetch(`http://127.0.0.1:8000/projects/${project.id}/collect`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: credentials.username,
+        password: credentials.password,
+      }),
+    });
+    if (!res.ok) return { results: [{ status: "error", message: "Erreur réseau" }] };
+    return await res.json();
+  };
+
+  const handleDiscover = () => {
+    const allDevicesHaveInfo = scanResults.every(
+      (d) => d.model && d.serial && d.version
+    );
+    if (
+      isCredentialsCompleted &&
+      isDiscoveryCompleted &&
+      isDeviceTypeCompleted &&
+      allDevicesHaveInfo
+    ) {
+      // Ne reset rien, tout est déjà complété
+      return;
+    }
+    // Sinon, reset tous les steps et les states associés
+    setStepsCompleted({
+      credentials: false,
+      subnet: false,
+      vendor: false,
+      collect: false,
+    });
+    setCredentials(null);
+    setDeviceType([]);
+    // Rafraîchit la liste après un petit délai pour laisser la BDD se mettre à jour
+    setTimeout(() => {
+      if (onResultsUpdate) onResultsUpdate();
+    }, 700); // 700ms, ajuste si besoin
   };
 
   return (

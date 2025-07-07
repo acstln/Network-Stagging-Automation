@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Body, HTTPException, Path
+from fastapi import FastAPI, Query, Body, HTTPException, Path, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pythonping import ping
 import ipaddress
@@ -10,11 +10,12 @@ from pydantic import BaseModel
 import re
 import subprocess
 import json
-from sqlmodel import Session, select
+from sqlmodel import Session, select, delete
 from backend.bdd.models import Project, Device
 from backend.bdd.database import engine, init_db
 from typing import List
 import os
+import logging
 
 app = FastAPI()
 init_db()
@@ -210,13 +211,16 @@ def list_projects():
     with Session(engine) as session:
         return session.exec(select(Project)).all()
 
-@app.get("/projects/{project_id}", response_model=Project)
+@app.get("/projects/{project_id}")
 def get_project(project_id: int):
     with Session(engine) as session:
         project = session.get(Project, project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-        return project
+        devices = session.exec(select(Device).where(Device.project_id == project_id)).all()
+        project_dict = project.dict()
+        project_dict["devices"] = [d.dict() for d in devices]
+        return project_dict
 
 @app.get("/devices")
 def list_devices():
@@ -241,40 +245,112 @@ def delete_device(device_id: int = Path(...)):
             session.commit()
         return {"ok": True}
 
-@app.post("/projects/{project_id}/collect")
-def collect_info(project_id: int):
-    import os
-    playbook_path = os.path.join(os.path.dirname(__file__), "../ansible/get_cisco_info_to_file.yml")
+@app.delete("/projects/{project_id}")
+def delete_project(project_id: int):
+    with Session(engine) as session:
+        # Supprimer d'abord tous les devices liés à ce projet
+        session.exec(delete(Device).where(Device.project_id == project_id))
+        # Puis supprimer le projet lui-même
+        project = session.get(Project, project_id)
+        if project:
+            session.delete(project)
+            session.commit()
+        return {"ok": True}
 
+PLAYBOOKS = {
+    "IOS-XE": "get_cisco_iosxe_info.yml",
+    "IOS-XR": "get_cisco_iosxr_info.yml",
+    "NX-OS": "get_cisco_nxos_info.yml",
+    "AOS-CX": "get_aruba_acxos_info.yml",
+    "JunOS": "get_juniper_junos_info.yml",
+}
+
+@app.post("/projects/{project_id}/collect")
+async def collect_info(project_id: int, request: Request):
+    raw_body = await request.body()
+    if not raw_body:
+        return {"error": "No body received"}
+    data = await request.json()
+    username = data.get("username")
+    password = data.get("password")
+    if not username or not password:
+        return {"error": "Missing credentials"}
+    results = []
     with Session(engine) as session:
         devices = session.exec(
-            select(Device).where(Device.project_id == project_id, Device.status == "online")
+            select(Device).where(Device.project_id == project_id, Device.status == "online", Device.vendor != None, Device.os != None)
         ).all()
         for device in devices:
+            if device.model and device.serial and device.version:
+                results.append({
+                    "ip": device.ip,
+                    "status": "skipped",
+                    "message": "Infos déjà présentes, collecte ignorée."
+                })
+                continue
+
+            playbook_name = PLAYBOOKS.get(device.os)
+            if not playbook_name:
+                results.append({
+                    "ip": device.ip,
+                    "status": "error",
+                    "message": f"OS non supporté: {device.os}"
+                })
+                continue
+            playbook_path = os.path.join(os.path.dirname(__file__), "../ansible", playbook_name)
+            output_file = os.path.join(os.path.dirname(__file__), f"../ansible/output_{device.id}.txt")
             result = subprocess.run(
                 [
                     "ansible-playbook",
                     playbook_path,
                     "-i", f"{device.ip},",
+                    "--extra-vars", f"username={username} password={password} output_file={output_file}"
                 ],
                 capture_output=True,
-                text=True
+                text=True,
+                env=os.environ
             )
-            print(f"=== Ansible stdout for {device.ip} ===")
-            print(result.stdout)
-            print(f"=== Ansible stderr for {device.ip} ===")
-            print(result.stderr)
-            # Parse la sortie standard pour trouver model, serial, version
-            for line in result.stdout.splitlines():
-                if "model:" in line.lower():
-                    device.model = line.split(":", 1)[1].strip()
-                if "serial:" in line.lower():
-                    device.serial = line.split(":", 1)[1].strip()
-                if "version:" in line.lower():
-                    device.version = line.split(":", 1)[1].strip()
-            session.add(device)
-        session.commit()
-    return {"ok": True}
+            if result.returncode != 0:
+                # Erreur Ansible (ex: credentials invalides)
+                # Extraction d'un message d'erreur plus lisible
+                msg = result.stderr or result.stdout or "Erreur inconnue"
+                if "Failed to authenticate" in msg or "Authentication failed" in msg:
+                    msg = "Échec d'authentification : identifiants invalides."
+                elif "OS non supporté" in msg:
+                    msg = f"OS non supporté: {device.os}"
+                elif "paramiko" in msg:
+                    msg = "Erreur SSH : vérifiez l'accès réseau et les identifiants."
+                results.append({
+                    "ip": device.ip,
+                    "status": "error",
+                    "message": msg,
+                })
+                continue
+            if os.path.exists(output_file):
+                with open(output_file) as f:
+                    lines = f.read().splitlines()
+                for line in lines:
+                    if line.startswith("Model:"):
+                        device.model = line.split(":", 1)[1].strip()
+                    if line.startswith("Serial:"):
+                        device.serial = line.split(":", 1)[1].strip()
+                    if line.startswith("Version:"):
+                        device.version = line.split(":", 1)[1].strip()
+                session.add(device)
+                session.commit()
+                os.remove(output_file)
+                results.append({
+                    "ip": device.ip,
+                    "status": "ok",
+                    "message": "Collecte réussie"
+                })
+            else:
+                results.append({
+                    "ip": device.ip,
+                    "status": "error",
+                    "message": "Fichier de sortie non trouvé"
+                })
+    return {"results": results}
 
 @app.patch("/devices/{device_id}")
 def patch_device(device_id: int, data: dict = Body(...)):
@@ -289,6 +365,11 @@ def patch_device(device_id: int, data: dict = Body(...)):
         session.add(device)
         session.commit()
         return device.dict()
+
+import os
+print("Current working directory:", os.getcwd())
+
+os.environ["ANSIBLE_HOST_KEY_CHECKING"] = "False"
 
 if __name__ == "__main__":
     import uvicorn

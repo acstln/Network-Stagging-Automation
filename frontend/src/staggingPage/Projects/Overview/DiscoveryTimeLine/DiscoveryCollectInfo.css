@@ -1,0 +1,68 @@
+.btn-collect {
+  background: #0969da !important;
+  color: #fff !important;
+  border: none !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  padding: 0.35rem 1.2rem !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  border-radius: 6px !important;
+  transition: background 0.2s;
+}
+
+.btn-collect:hover {
+  background: #1756a9 !important;
+  color: #fff !important;
+}
+
+.btn-collect:disabled {
+  background: #e0e0e0 !important;
+  color: #aaa !important;
+  border: 1px solid #ccc !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+}
+
+.collect-btn-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #ccc;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  box-sizing: border-box;
+  vertical-align: middle;
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: 5px; /* Ajoute ce margin-top pour centrer parfaitement */
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.checkmark {
+  color: #2ecc40;
+  font-size: 26px;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.4s, transform 0.4s;
+  pointer-events: none;
+  margin-left: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.checkmark.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+

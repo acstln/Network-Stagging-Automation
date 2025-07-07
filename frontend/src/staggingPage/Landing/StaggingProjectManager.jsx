@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import StaggingProjectList from "./StaggingProjectList";
-import StaggingProjectPage from "./StaggingProjectPage";
+import StaggingProjectPage from "../Projects/StaggingProjectMenu";
 
 export default function StaggingProjectManager() {
   const [projects, setProjects] = useState([]);

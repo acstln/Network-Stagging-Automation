@@ -26,3 +26,7 @@ export async function fetchProjectById(id) {
   if (!res.ok) throw new Error("Projet introuvable");
   return res.json();
 }
+
+export async function deleteProject(id) {
+  await fetch(`http://127.0.0.1:8000/projects/${id}`, { method: "DELETE" });
+}
