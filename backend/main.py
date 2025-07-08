@@ -16,6 +16,7 @@ from backend.bdd.database import engine, init_db
 from typing import List
 import os
 import logging
+#from backend.DeviceOperations.download_config import download_iosxe_config
 
 app = FastAPI()
 init_db()
@@ -166,30 +167,6 @@ def parse_ip_range(subnet):
         return [f"{prefix}{i}" for i in range(start, end + 1)]
     return None
 
-@app.post("/collect_info")
-def collect_info(ip: str = Body(...), username: str = Body(...), password: str = Body(...), os_type: str = Body(...)):
-    playbook_path = os.path.join(os.path.dirname(__file__), "../ansible/get_cisco_info_to_file.yml")
-    # Appelle le playbook Ansible en ligne de commande
-    cmd = [
-        "ansible-playbook",
-        "-i", f"{ip},",  # virgule pour inventaire inline
-        "--extra-vars", f"ansible_user={username} ansible_password={password} ansible_network_os={os_type}",
-        playbook_path
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    # Lis le fichier généré par le playbook
-    try:
-        with open("/Users/acas/Documents/dev/Axians/Network-Stagging-Automation/ansible/output.txt") as f:
-            lines = f.read().splitlines()
-        data = {}
-        for line in lines:
-            if ":" in line:
-                k, v = line.split(":", 1)
-                data[k.strip().lower()] = v.strip()
-        return data
-    except Exception as e:
-        return {"error": str(e), "ansible_output": result.stdout, "ansible_error": result.stderr}
-
 @app.post("/projects/", response_model=Project)
 def create_project(project: Project):
     with Session(engine) as session:
@@ -257,48 +234,58 @@ def delete_project(project_id: int):
             session.commit()
         return {"ok": True}
 
-PLAYBOOKS = {
-    "IOS-XE": "get_cisco_iosxe_info.yml",
-    "IOS-XR": "get_cisco_iosxr_info.yml",
-    "NX-OS": "get_cisco_nxos_info.yml",
-    "AOS-CX": "get_aruba_acxos_info.yml",
-    "JunOS": "get_juniper_junos_info.yml",
+# Détermine le chemin absolu du dossier ansible/playbooks
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PLAYBOOKS_DIR = os.path.abspath(os.path.join(BASE_DIR, "../ansible/Playbooks"))
+
+GET_INFO_PLAYBOOKS = {
+    "IOS-XE": os.path.join(PLAYBOOKS_DIR, "GetDeviceInfo/get_cisco_iosxe_info.yml"),
+    "IOS-XR": os.path.join(PLAYBOOKS_DIR, "GetDeviceInfo/get_cisco_iosxr_info.yml"),
+    "NX-OS": os.path.join(PLAYBOOKS_DIR, "GetDeviceInfo/get_cisco_nxos_info.yml"),
+    "AOS-CX": os.path.join(PLAYBOOKS_DIR, "GetDeviceInfo/get_aruba_acxos_info.yml"),
+    "JunOS": os.path.join(PLAYBOOKS_DIR, "GetDeviceInfo/get_juniper_junos_info.yml"),
+}
+
+GET_CONFIG_PLAYBOOKS = {
+    "IOS-XE": os.path.join(PLAYBOOKS_DIR, "GetDeviceConfiguration/get_cisco_iosxe_config.yml"),
+    # Ajoute ici les autres OS plus tard
 }
 
 @app.post("/projects/{project_id}/collect")
-async def collect_info(project_id: int, request: Request):
-    raw_body = await request.body()
-    if not raw_body:
-        return {"error": "No body received"}
-    data = await request.json()
-    username = data.get("username")
-    password = data.get("password")
-    if not username or not password:
-        return {"error": "Missing credentials"}
-    results = []
-    with Session(engine) as session:
-        devices = session.exec(
-            select(Device).where(Device.project_id == project_id, Device.status == "online", Device.vendor != None, Device.os != None)
-        ).all()
-        for device in devices:
-            if device.model and device.serial and device.version:
-                results.append({
-                    "ip": device.ip,
-                    "status": "skipped",
-                    "message": "Infos déjà présentes, collecte ignorée."
-                })
-                continue
+async def collect_info(project_id: int, body: dict):
+    username = body["username"]
+    password = body["password"]
+    devices = body.get("devices")  # liste d'IDs ou d'IPs
 
-            playbook_name = PLAYBOOKS.get(device.os)
-            if not playbook_name:
+    with Session(engine) as session:
+        all_devices = session.exec(
+            select(Device).where(
+                Device.project_id == project_id,
+                Device.status == "online",
+                Device.vendor != None,
+                Device.os != None
+            )
+        ).all()
+
+        if devices:
+            all_devices = [d for d in all_devices if (d.id in devices or d.ip in devices)]
+
+        results = []
+        for device in all_devices:
+            playbook_path = GET_INFO_PLAYBOOKS.get(device.os)
+            if not playbook_path or not os.path.exists(playbook_path):
                 results.append({
                     "ip": device.ip,
                     "status": "error",
-                    "message": f"OS non supporté: {device.os}"
+                    "message": f"Playbook not found for OS: {device.os}"
                 })
                 continue
-            playbook_path = os.path.join(os.path.dirname(__file__), "../ansible", playbook_name)
-            output_file = os.path.join(os.path.dirname(__file__), f"../ansible/output_{device.id}.txt")
+
+            # Fichier temporaire pour la sortie
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f"_info_{device.id}.txt") as tmpfile:
+                output_file = tmpfile.name
+
             result = subprocess.run(
                 [
                     "ansible-playbook",
@@ -311,21 +298,15 @@ async def collect_info(project_id: int, request: Request):
                 env=os.environ
             )
             if result.returncode != 0:
-                # Erreur Ansible (ex: credentials invalides)
-                # Extraction d'un message d'erreur plus lisible
                 msg = result.stderr or result.stdout or "Erreur inconnue"
-                if "Failed to authenticate" in msg or "Authentication failed" in msg:
-                    msg = "Échec d'authentification : identifiants invalides."
-                elif "OS non supporté" in msg:
-                    msg = f"OS non supporté: {device.os}"
-                elif "paramiko" in msg:
-                    msg = "Erreur SSH : vérifiez l'accès réseau et les identifiants."
                 results.append({
                     "ip": device.ip,
                     "status": "error",
                     "message": msg,
                 })
                 continue
+
+            # Lecture et mise à jour des champs du device
             if os.path.exists(output_file):
                 with open(output_file) as f:
                     lines = f.read().splitlines()
@@ -336,6 +317,8 @@ async def collect_info(project_id: int, request: Request):
                         device.serial = line.split(":", 1)[1].strip()
                     if line.startswith("Version:"):
                         device.version = line.split(":", 1)[1].strip()
+                    if line.startswith("Hostname:"):
+                        device.name = line.split(":", 1)[1].strip()
                 session.add(device)
                 session.commit()
                 os.remove(output_file)
@@ -365,6 +348,84 @@ def patch_device(device_id: int, data: dict = Body(...)):
         session.add(device)
         session.commit()
         return device.dict()
+
+@app.post("/devices/{device_id}/ping")
+def ping_device(device_id: int):
+    # Fait un ping réel (ou équivalent) sur l'IP du device
+    # Met à jour le champ status dans la base ("online" ou "offline")
+    # Retourne {"online": True/False}
+    with Session(engine) as session:
+        device = session.get(Device, device_id)
+        if not device:
+            raise HTTPException(status_code=404, detail="Device not found")
+        response = ping(device.ip, count=1, timeout=1)
+        status = "online" if response.success() else "offline"
+        device.status = status
+        session.add(device)
+        session.commit()
+        return {"online": status == "online"}
+
+@app.post("/devices/{device_id}/download_config")
+def download_config(device_id: int, body: dict):
+    # Récupère l'IP, l'OS, etc. depuis la base
+    with Session(engine) as session:
+        device = session.get(Device, device_id)
+        if not device:
+            raise HTTPException(status_code=404, detail="Device not found")
+        if device.os != "IOS-XE":
+            raise HTTPException(status_code=400, detail="Download config not implemented for this OS")
+        username = body["username"]
+        password = body["password"]
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f"_config_{device_id}.txt") as tmpfile:
+            output_file = tmpfile.name
+            print(tempfile)
+
+
+        result = download_iosxe_config(device.ip, username, password, output_file)
+        if "error" in result:
+            return JSONResponse(status_code=500, content={"error": result["error"]})
+        return {"config": result["config"]}
+
+import os
+print("Current working directory:", os.getcwd())
+
+os.environ["ANSIBLE_HOST_KEY_CHECKING"] = "False"
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+
+import os
+import subprocess
+
+def download_iosxe_config(ip, username, password, output_file):
+    playbook_path = GET_CONFIG_PLAYBOOKS["IOS-XE"]
+    if not os.path.exists(playbook_path):
+        return {"error": f"Playbook not found: {playbook_path}"}
+    result = subprocess.run(
+        [
+            "ansible-playbook",
+            playbook_path,
+            "-i", f"{ip},",
+            "--extra-vars", f"username={username} password={password} output_file={output_file}"
+        ],
+        capture_output=True,
+        text=True,
+        env=os.environ
+    )
+    if result.returncode != 0:
+        print("Ansible playbook failed:", result.stderr or result.stdout)
+        return {"error": result.stderr or result.stdout}
+    if os.path.exists(output_file):
+        with open(output_file) as f:
+            config = f.read()
+        os.remove(output_file)
+        print("Config downloaded successfully")
+        print(output_file)
+        print(config)
+        return {"config": config}
+    return {"error": "No config file produced"}
 
 import os
 print("Current working directory:", os.getcwd())

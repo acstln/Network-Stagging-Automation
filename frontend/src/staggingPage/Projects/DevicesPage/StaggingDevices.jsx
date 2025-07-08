@@ -4,7 +4,7 @@ import "../common/CommonTable.css";
 import DeviceActions from "./StaggingDeviceActions";
 import StaggingMainContainer from "../common/StaggingMainContainer";
 
-export default function StaggingDevices({ devices = [], refreshKey, onRefresh }) {
+export default function StaggingDevices({ devices = [], refreshKey, onRefresh, projectId }) {
   const [selected, setSelected] = useState([]);
 
   React.useEffect(() => {
@@ -34,6 +34,7 @@ export default function StaggingDevices({ devices = [], refreshKey, onRefresh })
             devices={devices}
             onRefresh={onRefresh} 
             setSelected={setSelected}
+            projectId={projectId}
           />
         </div>
         <table className="common-table">
@@ -47,9 +48,10 @@ export default function StaggingDevices({ devices = [], refreshKey, onRefresh })
                   disabled={devices.length === 0}
                 />
               </th>
+              <th>Nom</th>
               <th>IP</th>
               <th>Status</th>
-              <th>Nom</th>
+              
               <th>Model</th>
               <th>Serial</th>
               <th>Version</th>
@@ -75,6 +77,7 @@ export default function StaggingDevices({ devices = [], refreshKey, onRefresh })
                       onChange={() => toggleSelect(d.id || d.ip)}
                     />
                   </td>
+                  <td>{d.name}</td>
                   <td>{d.ip}</td>
                   <td>
                     <span
@@ -90,7 +93,6 @@ export default function StaggingDevices({ devices = [], refreshKey, onRefresh })
                       {d.status || "unknown"}
                     </span>
                   </td>
-                  <td>{d.name}</td>
                   <td>{d.model}</td>
                   <td>{d.serial}</td>
                   <td>{d.version}</td>

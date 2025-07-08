@@ -1,0 +1,25 @@
+---
+#https://docs.ansible.com/ansible/latest/collections/cisco/ios/ios_facts_module.html#ansible-collections-cisco-ios-ios-facts-module
+- name: Collect Cisco IOS-XE info (via ios_facts)
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  vars:
+    ansible_network_os: ios
+    ansible_user: "{{ username }}"
+    ansible_password: "{{ password }}"
+  tasks:
+    - name: Récupérer les facts IOS
+      cisco.ios.ios_facts:
+      register: ios_facts_result
+
+    - name: Write info to file
+      local_action:
+        module: copy
+        content: |
+          IP: {{ inventory_hostname }}
+          Hostname: {{ ios_facts_result.ansible_facts.ansible_net_hostname | default('') }}
+          Model: {{ ios_facts_result.ansible_facts.ansible_net_model | default('') }}
+          Serial: {{ ios_facts_result.ansible_facts.ansible_net_serialnum | default('') }}
+          Version: {{ ios_facts_result.ansible_facts.ansible_net_version | default('') }}
+        dest: "{{ output_file | default('output.txt') }}"

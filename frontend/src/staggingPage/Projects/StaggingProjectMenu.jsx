@@ -97,7 +97,8 @@ export default function StaggingProjectPage() {
           <StaggingDevices
             devices={project.devices}
             refreshKey={refreshKey}
-            onRefresh={fetchProject} // <-- ajoute cette prop !
+            onRefresh={fetchProject}
+            projectId={project.id} // <-- ajoute cette prop
           />
         </div>
       </div>
