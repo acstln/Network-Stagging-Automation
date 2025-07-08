@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createProject, fetchProjects, deleteProject } from "../../api/projects";
 import "./StaggingProjectList.css";
+import ButtonTrash from "../../medias/ButtonTrash"; // Ajout de l'import
 
 export default function StaggingProjectList() {
   const [form, setForm] = useState({ name: "", creator: "", description: "" });
@@ -65,15 +66,8 @@ export default function StaggingProjectList() {
                 onClick={e => { e.stopPropagation(); setConfirmDeleteId(p.id); }}
               >
                 <span className="trash-icon" aria-label="delete">
-                  {/* Icône flat design poubelle */}
-                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                    <rect x="6" y="9" width="2" height="6" rx="1" fill="currentColor"/>
-                    <rect x="10" y="9" width="2" height="6" rx="1" fill="currentColor"/>
-                    <rect x="14" y="9" width="2" height="6" rx="1" fill="currentColor"/>
-                    <rect x="4" y="6" width="14" height="2" rx="1" fill="currentColor"/>
-                    <rect x="8" y="4" width="6" height="2" rx="1" fill="currentColor"/>
-                    <rect x="5" y="8" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                  </svg>
+                  {/* Utilisation du composant ButtonTrash */}
+                  <ButtonTrash width={22} height={22} />
                 </span>
               </button>
             </div>

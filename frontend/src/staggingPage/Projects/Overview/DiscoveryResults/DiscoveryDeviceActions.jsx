@@ -13,7 +13,7 @@ export default function DiscoveryDeviceActions({
   selected,
   setShowOsMenu,
   onDelete,
-  showOsMenu,
+  showOsMenu, 
   onSetOs,
   selectedOs,
   setSelectedOs,
@@ -66,9 +66,9 @@ export default function DiscoveryDeviceActions({
       </div>
       <button
         className="action-btn action-btn--delete"
-        type="button"
         disabled={selected.length === 0}
         onClick={onDelete}
+        title="Delete"
       >
         Delete
       </button>

@@ -1,9 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import "../common/CommonDeviceActions.css";
 import { rediscoverDevices } from "./DeviceOperations/rediscover";
-import { checkAvailability } from "./DeviceOperations/CheckAvailability";
+import { checkAvailability } from "./DeviceOperations/checkAvailability";
 import { downloadConfig } from "./DeviceOperations/DownloadConfig";
+import { backupConfig } from "./DeviceOperations/BackupConfig";
 import ErrorModal from "../../../common/components/ErrorModal";
+import ButtonTrash from "../../../medias/ButtonTrash";
+import ButtonExport from "../../../medias/ButtonExport";
+import ButtonGear from "../../../medias/ButtonGear";
 
 function downloadFile(filename, content, mimeType) {
   const blob = new Blob([content], { type: mimeType });
@@ -89,7 +93,7 @@ function CredentialsModal({ open, onSubmit, onCancel }) {
   );
 }
 
-export default function DeviceActions({ selected, devices = [], onRefresh, setSelected, projectId }) {
+export default function StaggingDeviceActions({ selected, devices = [], onRefresh, setSelected, projectId }) {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [exportAnimating, setExportAnimating] = useState(false);
@@ -100,7 +104,6 @@ export default function DeviceActions({ selected, devices = [], onRefresh, setSe
   const exportBtnRef = useRef(null);
   const actionsBtnRef = useRef(null);
 
-  // Ferme les menus dropdown si on clique ailleurs
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -118,12 +121,10 @@ export default function DeviceActions({ selected, devices = [], onRefresh, setSe
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showExportMenu, showActionsMenu]);
 
-  // Helpers pour actions
   const selectedDevices = devices.filter(d => selected.includes(d.id || d.ip));
   const allSameOS = selectedDevices.length > 0 && selectedDevices.every(d => d.os === selectedDevices[0].os);
   const isJunOS = allSameOS && selectedDevices[0]?.os?.toLowerCase().includes("junos");
 
-  // Demande credentials via modal et promesse
   async function askCredentials() {
     setCredModalOpen(true);
     return new Promise((resolve) => {
@@ -146,8 +147,6 @@ export default function DeviceActions({ selected, devices = [], onRefresh, setSe
 
     if (action === "rediscover") {
       if (!selectedDevices.length) return;
-
-      // Check for missing vendor or OS
       const missingVendorOrOs = selectedDevices.find(
         d => !d.vendor || !d.os
       );
@@ -159,28 +158,20 @@ export default function DeviceActions({ selected, devices = [], onRefresh, setSe
         setErrorModalOpen(true);
         return;
       }
-
       const creds = await askCredentials();
       if (!creds) return;
-
       try {
         await rediscoverDevices({ projectId, creds, selectedDevices });
         if (onRefresh) setTimeout(onRefresh, 700);
       } catch (e) {
         setErrorMessage(e.message);
         setErrorModalOpen(true);
-        // Optionnel : log ou toast non bloquant
       }
       return;
     } else if (action === "check-availability") {
       if (!selectedDevices.length) return;
-
       try {
-        // Lance le check pour chaque device sélectionné
-        const results = await checkAvailability({ selectedDevices });
-
-        // Mets à jour le status localement si tu veux un retour instantané (optionnel)
-        // Sinon, force le refresh du tableau pour récupérer les nouveaux status depuis le backend
+        await checkAvailability({ selectedDevices });
         if (onRefresh) onRefresh();
       } catch (e) {
         setErrorMessage("An error occurred while checking device availability.");
@@ -191,11 +182,9 @@ export default function DeviceActions({ selected, devices = [], onRefresh, setSe
       if (!selectedDevices.length) return;
       const creds = await askCredentials();
       if (!creds) return;
-
       try {
         for (const device of selectedDevices) {
           const config = await downloadConfig({ device, creds });
-          // Télécharge le fichier côté client
           downloadFile(
             `config_${device.name || device.ip || device.id}.txt`,
             config,
@@ -208,8 +197,22 @@ export default function DeviceActions({ selected, devices = [], onRefresh, setSe
         setErrorModalOpen(true);
       }
       return;
+    } else if (action === "backup-config") {
+      if (!selectedDevices.length) return;
+      const creds = await askCredentials();
+      if (!creds) return;
+      try {
+        for (const device of selectedDevices) {
+          await backupConfig({ device, creds });
+        }
+        if (onRefresh) onRefresh();
+        alert("Backup terminé !");
+      } catch (e) {
+        setErrorMessage(e.message);
+        setErrorModalOpen(true);
+      }
+      return;
     }
-
     alert(`Action "${action}" sur ${selectedDevices.length} device(s)`);
   };
 
@@ -222,7 +225,6 @@ export default function DeviceActions({ selected, devices = [], onRefresh, setSe
     setShowExportMenu(false);
     if (!devices.length) return;
     setExportAnimating(true);
-
     setTimeout(() => {
       if (type === "csv") {
         const csv = toCSV(devices);
@@ -231,7 +233,6 @@ export default function DeviceActions({ selected, devices = [], onRefresh, setSe
         downloadFile("devices.json", JSON.stringify(devices, null, 2), "application/json");
       }
     }, 400);
-
     setTimeout(() => {
       setExportAnimating(false);
     }, 750);
@@ -252,41 +253,57 @@ export default function DeviceActions({ selected, devices = [], onRefresh, setSe
     }
   };
 
-  const handleCredentialsSubmit = async ({ username, password }) => {
-    setCredModalOpen(false);
-
-    try {
-      alert("Collecte en cours...");
-      // Appelle l’API collect du projet (comme dans Discovery)
-      const res = await fetch(`http://127.0.0.1:8000/projects/${projectId}/collect`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-      });
-      if (!res.ok) throw new Error("Erreur lors de la collecte");
-      await res.json();
-      alert("Collecte terminée !");
-      if (onRefresh) setTimeout(onRefresh, 700);
-    } catch (e) {
-      alert("Erreur collecte : " + e.message);
-    }
-  };
-
   return (
-    <div className="device-actions-group">
-      {/* Actions Dropdown */}
-      <div className="action-btn-dropdown-container" ref={actionsBtnRef}>
+    <div className="device-actions-group" style={{ display: "flex", gap: 8 }}>
+      {/* Delete à gauche, icône poubelle custom */}
+      <button
+        className="flat-icon"
+        disabled={selected.length === 0}
+        onClick={handleDelete}
+        title="Delete"
+      >
+        <ButtonTrash />
+      </button>
+      {/* Espaceur pour pousser les boutons à droite */}
+      <div style={{ flex: 1 }} />
+      {/* Export juste à gauche de la roue crantée */}
+      <div ref={exportBtnRef} style={{ position: "relative" }}>
         <button
-          className="action-btn"
+          className={`flat-icon${exportAnimating ? " export-animating" : ""}`}
+          disabled={devices.length === 0 || exportAnimating}
+          onClick={handleExportClick}
+          type="button"
+          title="Export"
+        >
+          <ButtonExport />
+        </button>
+        {showExportMenu && (
+          <div className="action-btn-dropdown-menu">
+            <div
+              className="action-btn-dropdown-option"
+              onClick={() => handleExportType("csv")}
+            >
+              CSV
+            </div>
+            <div
+              className="action-btn-dropdown-option"
+              onClick={() => handleExportType("json")}
+            >
+              JSON
+            </div>
+          </div>
+        )}
+      </div>
+      {/* Roue crantée complètement à droite */}
+      <div ref={actionsBtnRef} style={{ marginLeft: "auto", position: "relative" }}>
+        <button
+          className="flat-icon"
           type="button"
           disabled={selected.length === 0}
           onClick={() => setShowActionsMenu(v => !v)}
+          title="Actions"
         >
-          Actions
-          <span style={{ marginLeft: 6, fontSize: 13, display: "inline-block", transform: "translateY(1px)" }}>▼</span>
+          <ButtonGear />
         </button>
         {showActionsMenu && (
           <div className="action-btn-dropdown-menu">
@@ -354,42 +371,6 @@ export default function DeviceActions({ selected, devices = [], onRefresh, setSe
           </div>
         )}
       </div>
-      {/* Export Dropdown */}
-      <div className="action-btn-dropdown-container" ref={exportBtnRef}>
-        <button
-          className={`action-btn${exportAnimating ? " export-animating" : ""}`}
-          disabled={devices.length === 0 || exportAnimating}
-          onClick={handleExportClick}
-          type="button"
-        >
-          Export
-        </button>
-        {showExportMenu && (
-          <div className="action-btn-dropdown-menu">
-            <div
-              className="action-btn-dropdown-option"
-              onClick={() => handleExportType("csv")}
-            >
-              CSV
-            </div>
-            <div
-              className="action-btn-dropdown-option"
-              onClick={() => handleExportType("json")}
-            >
-              JSON
-            </div>
-          </div>
-        )}
-      </div>
-      {/* Delete */}
-      <button
-        className="action-btn action-btn--delete"
-        disabled={selected.length === 0}
-        onClick={handleDelete}
-      >
-        Delete
-      </button>
-
       {/* Error Modal */}
       {errorModalOpen && (
         <ErrorModal

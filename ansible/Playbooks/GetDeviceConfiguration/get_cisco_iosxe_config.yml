@@ -16,9 +16,8 @@
         gather_subset: config
       register: ios_facts_result
 
-    - name: Write config to file
-      copy:
-        content: "{{ ios_facts_result.ansible_facts.ansible_net_config | default('') }}"
-        dest: "{{ config_output_file }}"
-      delegate_to: localhost
-      run_once: true
+
+
+    - name: Print running config to stdout
+      debug:
+        msg: "{{ ios_facts_result.ansible_facts.ansible_net_config | default('') }}"

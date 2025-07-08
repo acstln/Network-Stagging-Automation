@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import TopBar from "./common/components/TopBar";
 import StaggingProjectManager from "./staggingPage/Landing/StaggingProjectManager";
 import StaggingProjectPage from "./staggingPage/Projects/StaggingProjectMenu";
+import DeviceInfo from "./staggingPage/Projects/DevicesPage/DeviceInfo/DeviceInfo";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           />
           <Route path="/stagging" element={<StaggingProjectManager />} />
           <Route path="/stagging/:projectId" element={<StaggingProjectPage />} />
+          <Route path="/devices/:deviceId" element={<DeviceInfo />} />
         </Routes>
       </div>
     </Router>

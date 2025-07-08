@@ -170,4 +170,28 @@
   justify-content: flex-end;
   margin-top: 0.5rem;
 }
+.flat-icon {
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: inherit;
+  padding: 0;
+  margin: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  max-width: 36px;
+  height: 36px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.flat-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.flat-icon:hover:not(:disabled) {
+  background: #f6f8fa;
+  border-radius: 6px;
+}
 

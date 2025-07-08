@@ -16,6 +16,7 @@ from backend.bdd.database import engine, init_db
 from typing import List
 import os
 import logging
+from datetime import datetime
 #from backend.DeviceOperations.download_config import download_iosxe_config
 
 app = FastAPI()
@@ -382,7 +383,7 @@ def download_config(device_id: int, body: dict):
             print(tempfile)
 
 
-        result = download_iosxe_config(device.ip, username, password, output_file)
+        result = download_iosxe_config(device.ip, username, password)
         if "error" in result:
             return JSONResponse(status_code=500, content={"error": result["error"]})
         return {"config": result["config"]}
@@ -399,7 +400,7 @@ if __name__ == "__main__":
 import os
 import subprocess
 
-def download_iosxe_config(ip, username, password, output_file):
+def download_iosxe_config(ip, username, password):
     playbook_path = GET_CONFIG_PLAYBOOKS["IOS-XE"]
     if not os.path.exists(playbook_path):
         return {"error": f"Playbook not found: {playbook_path}"}
@@ -408,30 +409,95 @@ def download_iosxe_config(ip, username, password, output_file):
             "ansible-playbook",
             playbook_path,
             "-i", f"{ip},",
-            "--extra-vars", f"username={username} password={password} output_file={output_file}"
+            "--extra-vars", f"username={username} password={password}"
         ],
         capture_output=True,
         text=True,
         env=os.environ
     )
     if result.returncode != 0:
-        print("Ansible playbook failed:", result.stderr or result.stdout)
         return {"error": result.stderr or result.stdout}
-    if os.path.exists(output_file):
-        with open(output_file) as f:
-            config = f.read()
-        os.remove(output_file)
-        print("Config downloaded successfully")
-        print(output_file)
-        print(config)
-        return {"config": config}
-    return {"error": "No config file produced"}
+    # Cherche la config dans la sortie standard (debug)
+    import re
+    config = ""
+    for line in result.stdout.splitlines():
+        m = re.search(r'"msg":\s*"(.+)"', line)
+        if m:
+            config = m.group(1).encode('utf-8').decode('unicode_escape')
+            break
+    if not config:
+        config = result.stdout
+    return {"config": config}
 
-import os
-print("Current working directory:", os.getcwd())
+import json
 
-os.environ["ANSIBLE_HOST_KEY_CHECKING"] = "False"
+@app.post("/devices/{device_id}/backup_config")
+def backup_config(device_id: int, body: dict):
+    """
+    Lance un backup de la configuration du device :
+    - Utilise le playbook adapté à l'OS
+    - Ajoute la config dans le champ configuration (tableau JSON, rotation sur 5)
+    """
+    username = body["username"]
+    password = body["password"]
+    with Session(engine) as session:
+        device = session.get(Device, device_id)
+        if not device:
+            raise HTTPException(status_code=404, detail="Device not found")
+        if not device.os or device.os not in GET_CONFIG_PLAYBOOKS:
+            raise HTTPException(status_code=400, detail=f"Backup not implemented for this OS: {device.os}")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+        playbook_path = GET_CONFIG_PLAYBOOKS[device.os]
+        if not os.path.exists(playbook_path):
+            raise HTTPException(status_code=500, detail=f"Playbook not found: {playbook_path}")
+
+        # Lance le playbook pour récupérer la config (même logique que download)
+        result = subprocess.run(
+            [
+                "ansible-playbook",
+                playbook_path,
+                "-i", f"{device.ip},",
+                "--extra-vars", f"username={username} password={password}"
+            ],
+            capture_output=True,
+            text=True,
+            env=os.environ
+        )
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail=result.stderr or result.stdout)
+
+        # Récupère la config depuis la sortie standard (debug msg)
+        import re
+        config = ""
+        for line in result.stdout.splitlines():
+            m = re.search(r'"msg":\s*"(.+)"', line)
+            if m:
+                config = m.group(1).encode('utf-8').decode('unicode_escape')
+                break
+        if not config:
+            config = result.stdout
+
+        # Mets à jour le champ configuration (tableau JSON de 5 entrées max)
+        try:
+            configs = json.loads(device.configuration) if getattr(device, "configuration", None) else []
+        except Exception:
+            configs = []
+        if not isinstance(configs, list):
+            configs = []
+        now = datetime.now().isoformat(timespec="seconds")
+        configs.append({"config": config, "date": now})
+        if len(configs) > 5:
+            configs = configs[-5:]  # Garde les 5 plus récentes
+        device.configuration = json.dumps(configs)
+        session.add(device)
+        session.commit()
+
+        return {"success": True, "config": config, "history": configs}
+
+@app.get("/devices/{device_id}")
+def get_device(device_id: int):
+    with Session(engine) as session:
+        device = session.get(Device, device_id)
+        if not device:
+            raise HTTPException(status_code=404, detail="Device not found")
+        return device.dict()

@@ -3,6 +3,7 @@ import "./StaggingDevices.css";
 import "../common/CommonTable.css";
 import DeviceActions from "./StaggingDeviceActions";
 import StaggingMainContainer from "../common/StaggingMainContainer";
+import { Link } from "react-router-dom";
 
 export default function StaggingDevices({ devices = [], refreshKey, onRefresh, projectId }) {
   const [selected, setSelected] = useState([]);
@@ -77,7 +78,20 @@ export default function StaggingDevices({ devices = [], refreshKey, onRefresh, p
                       onChange={() => toggleSelect(d.id || d.ip)}
                     />
                   </td>
-                  <td>{d.name}</td>
+                  <td>
+                    <Link
+                      to={`/devices/${d.id}`}
+                      style={{
+                        color: "#0969da",
+                        textDecoration: "underline",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        fontSize: "1rem"
+                      }}
+                    >
+                      {d.name || d.ip}
+                    </Link>
+                  </td>
                   <td>{d.ip}</td>
                   <td>
                     <span

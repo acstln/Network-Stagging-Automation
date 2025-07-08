@@ -13,6 +13,7 @@ class Device(SQLModel, table=True):
     os: Optional[str] = None
     selected: bool = False
     project_id: Optional[int] = Field(default=None, foreign_key="project.id")
+    configuration: Optional[str] = None
     project: Optional["Project"] = Relationship(back_populates="devices")
 
 class Project(SQLModel, table=True):
