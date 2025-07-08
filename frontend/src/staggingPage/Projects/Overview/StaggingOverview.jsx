@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import DiscoveryTable from "./DiscoveryResults/DiscoveryTable";
+import DiscoveryTable from "./DiscoveryResults/DiscoveryDevices";
 import DiscoveryTimeline from "./DiscoveryTimeLine/DiscoveryTimeline";
 import PresentationBlock from "./DiscoveryTimeLine/PresentationBlock";
 import StaggingMainContainer from "../common/StaggingMainContainer";
+import "./StaggingOverview.css"; // <-- Ajoute l'import CSS
 
 export default function StaggingOverview({ project }) {
   const [scanResults, setScanResults] = useState([]);
@@ -22,26 +23,9 @@ export default function StaggingOverview({ project }) {
   return (
     <StaggingMainContainer>
       <PresentationBlock />
-      <div
-        style={{
-          display: "flex",
-          alignItems: "stretch",
-          width: "100%",
-          margin: "0 auto",
-          minHeight: 400,
-        }}
-      >
+      <div className="stagging-overview-layout">
         {/* Bloc gauche */}
-        <div
-          id="discoveryTimeline"
-          style={{
-            flex: "0 0 40%",
-            maxWidth: "40%",
-            padding: 24,
-            minHeight: 400,
-            borderRight: "1px solid #d0d7de",
-          }}
-        >
+        <div className="stagging-overview-timeline" id="discoveryTimeline">
           <DiscoveryTimeline
             scanResults={scanResults}
             onResultsUpdate={fetchDevices}
@@ -49,24 +33,9 @@ export default function StaggingOverview({ project }) {
           />
         </div>
         {/* Espace */}
-        <div
-          style={{
-            flex: "0 0 3%",
-            maxWidth: "3%",
-            minHeight: 400,
-          }}
-        />
+        <div className="stagging-overview-spacer" />
         {/* Bloc droit */}
-        <div
-          id="discoveryResults"
-          style={{
-            flex: "0 0 57%",
-            maxWidth: "57%",
-            padding: 24,
-            minHeight: 400,
-            marginLeft: 1,
-          }}
-        >
+        <div className="stagging-overview-results" id="discoveryResults">
           <DiscoveryTable scanResults={scanResults} onReset={fetchDevices} />
         </div>
       </div>

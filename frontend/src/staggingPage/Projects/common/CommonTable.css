@@ -1,0 +1,92 @@
+/* Table styles */
+
+.common-device-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 5px;
+}
+
+.common-table-container {
+  width: 100%;
+}
+.common-table-container.stagging-devices-container {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 0;
+  padding: 10px;
+  padding-top: 30px;
+}
+
+.common-table-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.common-table-title {
+  font-weight: 600;
+  margin: 0;
+}
+
+.common-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 0.97rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  border-radius: 5px;
+}
+
+.common-table th,
+.common-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #eaecef;
+  text-align: left;
+}
+
+.common-table th {
+  background: #f6f8fa;
+  font-weight: 600;
+  color: #24292f;
+}
+
+/* Action buttons */
+.common-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.common-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 90px;
+  height: 36px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #24292f;
+  padding: 0 14px;
+  transition: background 0.2s, border 0.2s;
+  cursor: pointer;
+  margin: 0 4px;
+}
+
+.common-action-btn--delete {
+  color: #cf222e;
+}
+
+.common-action-btn:disabled {
+  background: #f6f8fa;
+  color: #888;
+  border: 1px solid #d0d7de;
+  cursor: not-allowed;
+}

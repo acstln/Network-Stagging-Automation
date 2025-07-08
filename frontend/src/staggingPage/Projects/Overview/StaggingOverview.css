@@ -1,0 +1,33 @@
+/* Layout principal de StaggingOverview */
+.stagging-overview-layout {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  margin: 0 auto;
+  min-height: 400px;
+}
+
+/* Bloc gauche (timeline) */
+.stagging-overview-timeline {
+  flex: 0 0 40%;
+  max-width: 40%;
+  padding: 24px;
+  min-height: 400px;
+  border-right: 1px solid #d0d7de;
+}
+
+/* Espace central */
+.stagging-overview-spacer {
+  flex: 0 0 3%;
+  max-width: 3%;
+  min-height: 400px;
+}
+
+/* Bloc droit (résultats) */
+.stagging-overview-results {
+  flex: 0 0 57%;
+  max-width: 57%;
+  padding: 24px;
+  min-height: 400px;
+  margin-left: 1px;
+}

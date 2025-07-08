@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import "./DataActions.css";
+import "../../common/CommonDeviceActions.css";
 
 const OS_OPTIONS = [
   { os: "IOS-XE", vendor: "Cisco" },
@@ -9,7 +9,7 @@ const OS_OPTIONS = [
   { os: "JunOS", vendor: "Juniper" },
 ];
 
-export default function DataActions({
+export default function DiscoveryDeviceActions({
   selected,
   setShowOsMenu,
   onDelete,
@@ -20,7 +20,6 @@ export default function DataActions({
 }) {
   const osBtnRef = useRef(null);
 
-  // Ferme le menu si on clique ailleurs
   React.useEffect(() => {
     function handleClickOutside(event) {
       if (osBtnRef.current && !osBtnRef.current.contains(event.target)) {
@@ -34,10 +33,10 @@ export default function DataActions({
   }, [showOsMenu, setShowOsMenu]);
 
   return (
-    <div className="data-actions-group">
-      <div className="set-os-dropdown-container" ref={osBtnRef}>
+    <div className="device-actions-group">
+      <div className="action-btn-dropdown-container" ref={osBtnRef}>
         <button
-          className="action-btn action-btn--dark"
+          className="action-btn"
           type="button"
           disabled={selected.length === 0}
           onClick={() => selected.length > 0 && setShowOsMenu((v) => !v)}
@@ -45,13 +44,14 @@ export default function DataActions({
           Set OS
         </button>
         {showOsMenu && (
-          <div className="set-os-dropdown">
+          <div className="action-btn-dropdown-menu">
             {OS_OPTIONS.map((opt) => (
               <div
                 key={opt.os}
-                className={`set-os-option${
-                  selectedOs === opt.os ? " selected" : ""
-                }`}
+                className={
+                  "action-btn-dropdown-option" +
+                  (selectedOs === opt.os ? " selected" : "")
+                }
                 onClick={() => onSetOs(opt)}
                 onMouseEnter={() => setSelectedOs(opt.os)}
               >

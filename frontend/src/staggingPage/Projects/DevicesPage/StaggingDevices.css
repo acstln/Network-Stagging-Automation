@@ -1,22 +1,31 @@
 .devices-table-container {
-  width: 100vw;
-  max-width: 100vw;
-  margin-left: 50%;
-  transform: translateX(-50%);
-  padding: 0 0 32px 0;
-  background: none;
+    display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: fit-content;
+  min-width: 100%;
+  margin-top: 0;
+  padding: 10px;
+}
+
+
+
+.devices-actions-group {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .devices-table {
-  width: 98vw;
-  max-width: 1400px;
-  margin: 0 auto;
-  border-collapse: separate;
-  border-spacing: 0;
+  width: 100%;
+  border-collapse: collapse;
   background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 4px 24px rgba(60,60,60,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  border-radius: 5px;
   overflow: hidden;
+  min-width: 1400px;
 }
 
 .devices-table th, .devices-table td {

@@ -5,7 +5,7 @@ import DiscoveryCredentials from "./DiscoveryCredentials";
 import DiscoveryDeviceType from "./DiscoveryDeviceType";
 import DiscoverySoftwareUpload from "./DiscoverySoftwareUpload";
 import DiscoveryCollectInfo from "./DiscoveryCollectInfo";
-import { collectSwitchInfo } from "../../../api/collectInfo";
+import { collectSwitchInfo } from "../../../../api/collectInfo";
 
 export default function StepTimeline({ scanResults, onResultsUpdate, project }) {
   const [credentials, setCredentials] = useState(null);

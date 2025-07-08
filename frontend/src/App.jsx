@@ -7,7 +7,8 @@ import StaggingProjectPage from "./staggingPage/Projects/StaggingProjectMenu";
 function App() {
   return (
     <Router>
-      <div style={{ paddingTop: 56 }}>
+      {/* Wrapper principal pour décaler le contenu sous la TopBar fixe */}
+      <div id="app-content-wrapper" style={{ paddingTop: 56 }}>
         <TopBar />
         <Routes>
           <Route

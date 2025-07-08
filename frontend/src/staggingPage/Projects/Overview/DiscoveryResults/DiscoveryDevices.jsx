@@ -1,6 +1,7 @@
-import React, { useState, useRef } from "react";
-import "./DiscoveryTable.css";
-import DataActions from "./DataActions";
+import React, { useState, useEffect, useRef } from "react";
+import "./DiscoveryDevices.css";
+import DiscoveryDeviceActions from "./DiscoveryDeviceActions";
+import "../../common/CommonTable.css";
 
 const OS_OPTIONS = [
   { os: "IOS-XE", vendor: "Cisco" },
@@ -10,12 +11,17 @@ const OS_OPTIONS = [
   { os: "JunOS", vendor: "Juniper" },
 ];
 
-export default function DiscoveryTable({ scanResults = [], onReset }) {
+export default function DiscoveryDevices({ scanResults = [], onReset, refreshKey }) {
   const [selected, setSelected] = useState([]);
   const [showOsMenu, setShowOsMenu] = useState(false);
   const [selectedOs, setSelectedOs] = useState(OS_OPTIONS[0].os);
   const [showProvisionedPopup, setShowProvisionedPopup] = useState(false);
   const osBtnRef = useRef(null);
+
+  // Reset la sélection à chaque refresh du tableau
+  useEffect(() => {
+    setSelected([]);
+  }, [refreshKey, scanResults]);
 
   const selectAll = () => {
     if (selected.length === scanResults.length) {
@@ -84,20 +90,13 @@ export default function DiscoveryTable({ scanResults = [], onReset }) {
   }
 
   return (
-    <div className="discovery-table-container">
-      <div
-        className="discovery-table-header"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+    <div className="common-table-container">
+      <div className="common-device-actions-group" >
         <h6 className="discovery-table-title" style={{ margin: 0 }}>
           Scanned Devices
         </h6>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <DataActions
+          <DiscoveryDeviceActions
             selected={selected}
             setShowOsMenu={setShowOsMenu}
             showOsMenu={showOsMenu}
@@ -108,7 +107,7 @@ export default function DiscoveryTable({ scanResults = [], onReset }) {
           />
         </div>
       </div>
-      <table className="discovery-table">
+      <table className="common-table">
         <thead>
           <tr>
             <th style={{ width: 36 }}>
@@ -120,56 +119,60 @@ export default function DiscoveryTable({ scanResults = [], onReset }) {
                 }
                 onChange={selectAll}
                 style={{ accentColor: "#0969da" }}
+                disabled={scanResults.length === 0}
               />
             </th>
-            <th>Status</th>
             <th>IP</th>
-            <th>Vendor</th>
+            <th>Status</th>
             <th>Model</th>
-            <th>OS</th>
             <th>Serial</th>
             <th>Version</th>
+            <th>Vendor</th>
+            <th>OS</th>
           </tr>
         </thead>
         <tbody>
-          {scanResults.map((device) => (
-            <tr key={device.id}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={selected.includes(device.id)}
-                  onChange={() => toggleSelect(device.id)}
-                />
+          {scanResults.length === 0 ? (
+            <tr>
+              <td colSpan={9} style={{ textAlign: "center", color: "#888" }}>
+                Aucun résultat pour l’instant…
               </td>
-              <td>
-                <span
-                  className={
-                    "status-badge " +
-                    (device.status === "online"
-                      ? "status-online"
-                      : device.status === "offline"
-                      ? "status-offline"
-                      : "status-unknown")
-                  }
-                >
-                  {device.status || "unknown"}
-                </span>
-              </td>
-              <td>{device.ip || ""}</td>
-              <td>{device.vendor || ""}</td>
-              <td>{device.model || ""}</td>
-              <td>{device.os || ""}</td>
-              <td>{device.serial || ""}</td>
-              <td>{device.version || ""}</td>
             </tr>
-          ))}
+          ) : (
+            scanResults.map((d) => (
+              <tr key={d.id || d.ip}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(d.id || d.ip)}
+                    onChange={() => toggleSelect(d.id || d.ip)}
+                  />
+                </td>
+                <td>{d.ip}</td>
+                <td>
+                  <span
+                    className={
+                      "status-badge " +
+                      (d.status === "online"
+                        ? "status-online"
+                        : d.status === "offline"
+                        ? "status-offline"
+                        : "status-unknown")
+                    }
+                  >
+                    {d.status || "unknown"}
+                  </span>
+                </td>
+                <td>{d.model}</td>
+                <td>{d.serial}</td>
+                <td>{d.version}</td>
+                <td>{d.vendor}</td>
+                <td>{d.os}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
-      {scanResults.length === 0 && (
-        <div className="discovery-table-empty">
-          Aucun résultat pour l’instant…
-        </div>
-      )}
       {showProvisionedPopup && (
         <div className="modal-overlay">
           <div className="modal-content">
