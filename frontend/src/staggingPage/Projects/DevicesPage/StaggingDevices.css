@@ -54,6 +54,22 @@
   color: #23272f;
 }
 
+/* Transition pour les cellules du tableau */
+.devices-table td {
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Animation lorsque les données sont en cours de chargement */
+.devices-table.loading {
+  opacity: 0.8;
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Animation pour les lignes qui viennent d'être mises à jour */
+.devices-table tr {
+  transition: background-color 0.3s ease-in-out;
+}
+
 @media (max-width: 900px) {
   .devices-table, .devices-table-container {
     width: 100vw;
