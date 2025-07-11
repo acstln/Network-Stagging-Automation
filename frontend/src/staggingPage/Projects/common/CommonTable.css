@@ -34,11 +34,13 @@
 
 .common-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate; /* Changé de collapse à separate pour permettre de meilleurs arrondis */
+  border-spacing: 0; /* Évite les espaces entre les cellules */
   background: #fff;
   font-size: 0.97rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-  border-radius: 5px;
+  border-radius: 10px; /* Augmenté de 5px à 10px pour des bords plus arrondis */
+  overflow: hidden; /* Assure que le contenu ne dépasse pas les bords arrondis */
 }
 
 .common-table th,
@@ -52,6 +54,29 @@
   background: #f6f8fa;
   font-weight: 600;
   color: #24292f;
+}
+
+/* Styles pour les cellules d'en-tête du coin supérieur gauche et droit */
+.common-table th:first-child {
+  border-top-left-radius: 10px;
+}
+
+.common-table th:last-child {
+  border-top-right-radius: 10px;
+}
+
+/* Styles pour les cellules du coin inférieur gauche et droit (quand il n'y a qu'une ligne) */
+.common-table tr:last-child td:first-child {
+  border-bottom-left-radius: 10px;
+}
+
+.common-table tr:last-child td:last-child {
+  border-bottom-right-radius: 10px;
+}
+
+/* Suppression de la bordure du bas pour la dernière ligne */
+.common-table tr:last-child td {
+  border-bottom: none;
 }
 
 /* Action buttons */
@@ -89,4 +114,15 @@
   color: #888;
   border: 1px solid #d0d7de;
   cursor: not-allowed;
+}
+
+.loading-indicator {
+  display: inline-block;
+  margin-left: 8px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

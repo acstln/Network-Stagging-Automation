@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "./DiscoverySubnetForm.css";
 
 export default function DiscoverySubnetForm({ onDiscover, loading }) {
-  const [subnet, setSubnet] = useState("");
+  const [subnet, setSubnet] = useState("172.17.77.0/29");
   const [error, setError] = useState("");
 
   function isValidSubnetOrRange(value) {

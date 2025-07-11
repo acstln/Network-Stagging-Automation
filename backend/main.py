@@ -310,16 +310,50 @@ async def collect_info(project_id: int, body: dict):
             # Lecture et mise à jour des champs du device
             if os.path.exists(output_file):
                 with open(output_file) as f:
-                    lines = f.read().splitlines()
+                    lines = f.readlines()
+                facts = {}
                 for line in lines:
-                    if line.startswith("Model:"):
-                        device.model = line.split(":", 1)[1].strip()
-                    if line.startswith("Serial:"):
-                        device.serial = line.split(":", 1)[1].strip()
-                    if line.startswith("Version:"):
-                        device.version = line.split(":", 1)[1].strip()
-                    if line.startswith("Hostname:"):
-                        device.name = line.split(":", 1)[1].strip()
+                    if ":" in line:
+                        k, v = line.split(":", 1)
+                        facts[k.strip()] = v.strip()
+
+                for key, value in facts.items():
+                    if key == "Model":
+                        device.model = value
+                    elif key == "Serial":
+                        device.serial = value
+                    elif key == "Version":
+                        device.version = value
+                    elif key == "Hostname":
+                        device.name = value
+                
+                model = facts.get("Model", "")
+                serial = facts.get("Serial", "")
+
+                # Récupère les listes stackées (JSON stringifié dans le fichier)
+                stacked_models = facts.get("StackedModels", None)
+                stacked_serials = facts.get("StackedSerials", None)
+
+                if stacked_models:
+                    try:
+                        models_list = json.loads(stacked_models)
+                    except Exception:
+                        models_list = [model] if model else []
+                else:
+                    models_list = [model] if model else []
+
+                if stacked_serials:
+                    try:
+                        serials_list = json.loads(stacked_serials)
+                    except Exception:
+                        serials_list = [serial] if serial else []
+                else:
+                    serials_list = [serial] if serial else []
+
+                device.model = json.dumps(models_list)
+                device.serial = json.dumps(serials_list)
+
+
                 session.add(device)
                 session.commit()
                 os.remove(output_file)
@@ -434,65 +468,56 @@ import json
 @app.post("/devices/{device_id}/backup_config")
 def backup_config(device_id: int, body: dict):
     """
-    Lance un backup de la configuration du device :
-    - Utilise le playbook adapté à l'OS
-    - Ajoute la config dans le champ configuration (tableau JSON, rotation sur 5)
+    Sauvegarde une configuration pour un appareil avec rotation des 5 dernières versions
     """
-    username = body["username"]
-    password = body["password"]
-    with Session(engine) as session:
-        device = session.get(Device, device_id)
-        if not device:
-            raise HTTPException(status_code=404, detail="Device not found")
-        if not device.os or device.os not in GET_CONFIG_PLAYBOOKS:
-            raise HTTPException(status_code=400, detail=f"Backup not implemented for this OS: {device.os}")
-
-        playbook_path = GET_CONFIG_PLAYBOOKS[device.os]
-        if not os.path.exists(playbook_path):
-            raise HTTPException(status_code=500, detail=f"Playbook not found: {playbook_path}")
-
-        # Lance le playbook pour récupérer la config (même logique que download)
-        result = subprocess.run(
-            [
-                "ansible-playbook",
-                playbook_path,
-                "-i", f"{device.ip},",
-                "--extra-vars", f"username={username} password={password}"
-            ],
-            capture_output=True,
-            text=True,
-            env=os.environ
-        )
-        if result.returncode != 0:
-            raise HTTPException(status_code=500, detail=result.stderr or result.stdout)
-
-        # Récupère la config depuis la sortie standard (debug msg)
-        import re
-        config = ""
-        for line in result.stdout.splitlines():
-            m = re.search(r'"msg":\s*"(.+)"', line)
-            if m:
-                config = m.group(1).encode('utf-8').decode('unicode_escape')
-                break
-        if not config:
-            config = result.stdout
-
-        # Mets à jour le champ configuration (tableau JSON de 5 entrées max)
-        try:
-            configs = json.loads(device.configuration) if getattr(device, "configuration", None) else []
-        except Exception:
-            configs = []
-        if not isinstance(configs, list):
-            configs = []
-        now = datetime.now().isoformat(timespec="seconds")
-        configs.append({"config": config, "date": now})
-        if len(configs) > 5:
-            configs = configs[-5:]  # Garde les 5 plus récentes
-        device.configuration = json.dumps(configs)
-        session.add(device)
-        session.commit()
-
-        return {"success": True, "config": config, "history": configs}
+    try:
+        with Session(engine) as session:
+            device = session.get(Device, device_id)
+            if not device:
+                raise HTTPException(status_code=404, detail=f"Device {device_id} not found")
+            
+            config = body.get("config", "")
+            max_backups = body.get("max_backups", 5)
+            timestamp = body.get("timestamp", datetime.now().isoformat())
+            comment = body.get("comment", f"Backup du {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+            
+            # Vérifier si le champ configurations existe déjà et est valide
+            existing_configs = []
+            try:
+                if device.configuration:
+                    existing_configs = json.loads(device.configuration)
+                    if not isinstance(existing_configs, list):
+                        existing_configs = []
+            except (json.JSONDecodeError, TypeError):
+                existing_configs = []
+            
+            # Créer un objet pour la nouvelle configuration
+            new_config = {
+                "content": config,
+                "date": timestamp,
+                "comment": comment
+            }
+            
+            # Ajouter la nouvelle configuration au début de la liste
+            existing_configs.insert(0, new_config)
+            
+            # Limiter le nombre de configurations
+            if len(existing_configs) > max_backups:
+                existing_configs = existing_configs[:max_backups]
+            
+            # Enregistrer la liste mise à jour
+            device.configuration = json.dumps(existing_configs)
+            session.add(device)
+            session.commit()
+            
+            return {
+                "success": True,
+                "message": f"Configuration saved successfully",
+                "config_count": len(existing_configs),
+                "timestamp": timestamp
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving backup: {str(e)}")
 
 @app.get("/devices/{device_id}")
 def get_device(device_id: int):
@@ -501,3 +526,40 @@ def get_device(device_id: int):
         if not device:
             raise HTTPException(status_code=404, detail="Device not found")
         return device.dict()
+
+# Ajoute cet import s'il n'existe pas déjà
+from fastapi import Query
+
+# Ajoute cette route à la fin du fichier, avant le if __name__ == "__main__":
+@app.get("/check-availability")
+def check_devices_availability(device_ids: str = Query(None)):
+    """
+    Vérifie la disponibilité des devices par ping et met à jour leur statut dans la BDD.
+    Si device_ids est fourni (format: "1,2,3"), vérifie seulement ces devices.
+    Sinon, vérifie tous les devices.
+    """
+    with Session(engine) as session:
+        # Détermine quels devices vérifier
+        if device_ids:
+            ids = [int(id) for id in device_ids.split(",") if id.strip().isdigit()]
+            devices = session.exec(select(Device).where(Device.id.in_(ids))).all()
+        else:
+            devices = session.exec(select(Device)).all()
+        
+        # Vérifie chaque device et met à jour son statut
+        updated_devices = []
+        for device in devices:
+            response = ping(device.ip, count=1, timeout=1)
+            status = "online" if response.success() else "offline"
+            
+            # Met à jour uniquement si le statut a changé
+            if device.status != status:
+                device.status = status
+                session.add(device)
+            
+            updated_devices.append(device.dict())
+        
+        # Sauvegarde les changements
+        session.commit()
+        
+        return {"devices": updated_devices}

@@ -1,0 +1,347 @@
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 85px;
+  max-width: 85px; /* Largeur maximale pour éviter les débordements */
+  height: 25px;         /* Hauteur réduite */
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  border: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #24292f;
+  padding: 0 14px;      /* Padding horizontal réduit pour l'équilibre */
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  cursor: pointer;
+  margin: 0 4px;
+}
+.action-btn:hover{
+  outline: none;
+    border: 1px solid #d0d7de;
+    background-color: #f1f1f1; /* Légère couleur de fond au survol */
+
+}
+
+.action-btn--dark {
+  background: #23272f;
+  color: #fff;
+  border: 1px solid #23272f;
+}
+
+.action-btn--delete {
+  color: #cf222e;
+  border: 1px solid #cf222e;
+}
+.action-btn--delete:hover {
+  color: #cf222e;
+  border: 1px solid #cf222e;
+}
+.action-btn:disabled,
+.action-btn[disabled] {
+  background: #f6f8fa;
+  color: #888;
+  border: 1px solid #d0d7de;
+  cursor: not-allowed;
+}
+
+/* SUPPRIME l'animation export verte et le style associé */
+.action-btn.export-animating {
+  /* border-color: #2ecc40 !important;
+  box-shadow: 0 0 0 2px #b6f5c6;
+  animation: export-grow 0.35s forwards; */
+}
+
+@keyframes export-grow {
+  /* to {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 6px #b6f5c6;
+  } */
+}
+
+/* Dropdown bouton commun */
+/* ===== DROPDOWN MENUS - STYLES AMÉLIORÉS ===== */
+.action-btn-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Le bouton qui ouvre le dropdown */
+.action-btn-dropdown-container .action-btn {
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+/* Petit indicateur de dropdown (flèche) */
+.action-btn-dropdown-container .action-btn::after {
+  content: "▾";
+  margin-left: 6px;
+  font-size: 0.8em;
+  position: relative;
+  top: -1px;
+  transition: transform 0.2s ease;
+}
+
+/* Rotation de la flèche quand le menu est ouvert */
+.action-btn-dropdown-container.active .action-btn::after {
+  transform: rotate(180deg);
+}
+
+/* Le menu dropdown lui-même */
+.action-btn-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: white;
+  border: 1px solid rgba(208, 215, 222, 0.8);
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  min-width: 180px; /* Légèrement plus large pour le texte */
+  overflow: hidden;
+  padding: 5px 0;
+  opacity: 1; /* Changé de 0 à 1 pour s'assurer qu'il est visible */
+  transform: translateY(0); /* Retiré la transformation initiale */
+  transform-origin: top right;
+  text-align: left; /* Alignement pour tout le conteneur */
+}
+
+/* Menu dropdown visible - supprimé les propriétés qui pourraient masquer le menu */
+.action-btn-dropdown-container.active .action-btn-dropdown-menu {
+  display: block; /* Assurez-vous qu'il s'affiche */
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Options dans le menu */
+.action-btn-dropdown-option {
+  cursor: pointer;
+  padding: 8px 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+  color: #3a3a3a;
+  transition: all 0.15s ease;
+  position: relative;
+  text-align: left;
+  border-left: 4px solid transparent; /* Bordure transparente par défaut */
+}
+
+/* Ligne de séparation entre options */
+.action-btn-dropdown-option:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  background: #f0f0f0;
+}
+
+/* Style au survol - modification pour éviter l'agrandissement */
+.action-btn-dropdown-option:hover {
+  background: #f0f7ff;
+  color: #0969da;
+  border-left: 4px solid #0969da; /* Remplace le padding par une bordure */
+  padding-left: 16px; /* Garde le même padding qu'avant */
+}
+
+/* Option sélectionnée */
+.action-btn-dropdown-option.selected {
+  background: #f0f7ff;
+  color: #0969da;
+  font-weight: 600;
+}
+
+/* Option désactivée */
+.action-btn-dropdown-option.disabled {
+  color: #bbb;
+  cursor: not-allowed;
+  background: transparent;
+}
+
+/* Ajout d'un effet subtil au clic */
+.action-btn-dropdown-option:active {
+  background: #e3f1ff;
+  transform: scale(0.98);
+}
+
+/* Animation de fermeture */
+@keyframes fadeOutDropdown {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-8px) scale(0.96); }
+}
+
+.action-btn-dropdown-menu.closing {
+  animation: fadeOutDropdown 0.2s ease forwards;
+}
+
+/* Conteneur principal pour titre à gauche, actions à droite */
+.common-device-actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+/* Si tu utilises un h6 dans ce bloc, tu peux ajouter : */
+.common-device-actions-group h6 {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Groupe de boutons à droite */
+.device-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Credentials Modal */
+
+/* === SUPPRIME ces anciens styles inutiles pour les popups génériques === */
+
+/* .cred-modal-overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cred-modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 2rem 2.5rem 1.5rem 2.5rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  min-width: 320px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.cred-modal h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+.cred-modal label {
+  display: flex;
+  flex-direction: column;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  gap: 0.2rem;
+}
+.cred-modal input[type="text"],
+.cred-modal input[type="password"] {
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: 1px solid #d0d7de;
+  font-size: 1rem;
+  margin-top: 0.2rem;
+}
+.cred-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+} */
+
+.flat-icon {
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: inherit;
+  padding: 0;
+  margin: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  max-width: 36px;
+  height: 36px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.flat-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.flat-icon:hover:not(:disabled) {
+  border-radius: 6px;
+}
+
+/* Ajoute ceci dans ton fichier CSS global ou dans CommonDeviceActions.css ou un fichier partagé */
+.flat-icon svg,
+.flat-icon > svg {
+  transition: transform 0.18s cubic-bezier(.4,2,.6,1);
+}
+
+.flat-icon:hover svg,
+.flat-icon:hover > svg {
+  transform: rotate(18deg);
+}
+
+/* Animation pour le bouton de vérification */
+.flat-icon.spinning svg {
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Ajouter ces styles pour l'animation d'export si ce n'est pas déjà fait */
+.flat-icon.export-animating {
+  border-color: #2ecc40 !important;
+  box-shadow: 0 0 0 2px #b6f5c6;
+  animation: export-grow 0.35s forwards;
+}
+
+@keyframes export-grow {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* S'assurer que les styles pour flat-icon et spinning sont présents */
+.flat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+ 
+  color: #24292f;
+  cursor: pointer;
+  transition: background 0.2s, border 0.2s;
+}
+
+.flat-icon:hover {
+  background: #f3f4f6;
+  border-color: #b0b7c0;
+}
+
+.flat-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.flat-icon.spinning svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+

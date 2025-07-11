@@ -1,0 +1,89 @@
+.error-modal-overlay {
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: errorModalFadeIn 0.2s ease-out;
+}
+
+.error-modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 24px 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  max-width: 450px;
+  width: 94vw;
+  animation: errorModalSlideIn 0.25s ease-out;
+  position: relative;
+}
+
+.error-modal-title {
+  margin-top: 0;
+  color: #e32636; /* Rouge pour le titre d'erreur */
+  font-size: 1.35rem;
+  margin-bottom: 16px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.error-modal-message {
+  margin-bottom: 20px;
+  font-size: 1.05rem;
+  color: #444;
+  white-space: pre-line;
+  line-height: 1.5;
+}
+
+.error-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.error-modal-button {
+  background: #e0e0e0;
+  color: #23272f;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 22px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  min-width: 90px;
+}
+
+.error-modal-button:hover {
+  background: #d0d7de;
+  color: #111217;
+}
+
+/* Animations */
+@keyframes errorModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes errorModalSlideIn {
+  from { 
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Pour éviter le scroll horizontal sur mobile */
+@media (max-width: 500px) {
+  .error-modal-content {
+    padding: 22px 8vw 18px;
+    max-width: 98vw;
+  }
+}

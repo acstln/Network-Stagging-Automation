@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import DiscoverySubnetForm from "./DiscoverySubnetForm";
 import DiscoveryStatusMessage from "./DiscoveryStatusMessage";
 
+// Import des API calls
+import POST_StartScan from "../../../api/Scan/POST_StartScan";
+import GET_ScanProgress from "../../../api/Scan/GET_ScanProgress";
+import POST_StopScan from "../../../api/Scan/POST_StopScan";
 
-export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanResults, completed, project }) {
+export default function DiscoveryNetScan({ 
+  defaultSubnet, 
+  onResultsUpdate, 
+  scanResults, 
+  completed, 
+  project,
+  setIsScanning // Nouvel argument
+}) {
   const [subnet, setSubnet] = useState("");
   const [loading, setLoading] = useState(false);
   const [scanId, setScanId] = useState(null);
@@ -20,55 +30,82 @@ export default function DiscoveryNetScan({ defaultSubnet, onResultsUpdate, scanR
     setScanProgress(0);
     setScanned(0);
     setTotal(0);
+    
+    // Signal le début du scan
+    if (setIsScanning) setIsScanning(true);
+    
     try {
-      const res = await fetch("http://127.0.0.1:8000/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subnet, project_id: project.id }), // <-- ajoute project_id ici
-      });
-      if (!res.ok) throw new Error("Erreur lors du lancement du scan");
-      const data = await res.json();
+      // Utilisation de l'API dédiée
+      const data = await POST_StartScan(subnet, project.id);
       setScanId(data.scan_id);
     } catch (err) {
       setError(err.message);
       setLoading(false);
+      // Signal la fin du scan en cas d'erreur
+      if (setIsScanning) setIsScanning(false);
     }
   };
 
   useEffect(() => {
     if (!scanId) return;
+    
     const interval = setInterval(async () => {
-      const res = await fetch(`http://127.0.0.1:8000/scan/progress/${scanId}`);
-      const data = await res.json();
-      setScanProgress(data.progress);
-      setScanned(data.scanned);
-      setTotal(data.total);
+      try {
+        // Utilisation de l'API dédiée
+        const data = await GET_ScanProgress(scanId);
+        setScanProgress(data.progress);
+        setScanned(data.scanned);
+        setTotal(data.total);
 
-      // Rafraîchir le tableau à chaque tick
-      if (onResultsUpdate) onResultsUpdate();
+        // À chaque tick du scan, actualiser le tableau
+        if (onResultsUpdate) {
+          console.log("Mise à jour des résultats pendant le scan");
+          onResultsUpdate();
+        }
 
-      if (data.progress >= 100) {
+        if (data.progress >= 100) {
+          clearInterval(interval);
+          setLoading(false);
+          setScanId(null);
+          
+          // Signal la fin du scan quand il est complété
+          if (setIsScanning) setIsScanning(false);
+          
+          // Actualisation finale après un délai
+          setTimeout(() => {
+            if (onResultsUpdate) onResultsUpdate();
+          }, 1000);
+        }
+      } catch (err) {
+        console.error("Erreur lors de la récupération de la progression:", err);
         clearInterval(interval);
         setLoading(false);
-        setScanId(null);
+        if (setIsScanning) setIsScanning(false);
       }
     }, 1000);
+    
     return () => clearInterval(interval);
-  }, [scanId, onResultsUpdate]);
+  }, [scanId, setIsScanning, onResultsUpdate]);
 
   // Fonction pour stopper le scan
   const handleStopScan = async () => {
     if (!scanId) return;
+    
     try {
-      await axios.post("http://127.0.0.1:8000/scan/stop/" + scanId);
+      // Utilisation de l'API dédiée
+      await POST_StopScan(scanId);
       setLoading(false);
       setScanId(null);
-      // Ajoute un petit délai avant le refresh
+      
+      // Signal la fin du scan lors de l'arrêt manuel
+      if (setIsScanning) setIsScanning(false);
+      
+      // Ajoute un délai pour le rafraîchissement final
       setTimeout(() => {
         if (onResultsUpdate) onResultsUpdate();
-      }, 500); // 500ms, ajuste si besoin
+      }, 1000);
     } catch (err) {
-      // Optionnel : afficher une erreur
+      console.error("Erreur lors de l'arrêt du scan:", err);
     }
   };
 

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import StaggingOverview from "./Overview/StaggingOverview";
 import StaggingDevices from "./DevicesPage/StaggingDevices";
 import "./StaggingProjectMenu.css";
+// Import de la fonction API avec la nouvelle convention
+import GET_ProjectById from "../../staggingPage/api/Projects/GET/GET_ProjectById";
 
 export default function StaggingProjectPage() {
   const { projectId } = useParams(); // Récupère l'ID du projet depuis l'URL
@@ -10,12 +12,23 @@ export default function StaggingProjectPage() {
   const [project, setProject] = useState(null); // Stocke les infos du projet courant
   const [tab, setTab] = useState("overview");  // Onglet actif ("overview" ou "devices")
   const [refreshKey, setRefreshKey] = useState(0); // Clé pour forcer le refresh des tableaux
+  const [loading, setLoading] = useState(true); // Indication de chargement
+  const [error, setError] = useState(null); // Gestion des erreurs
 
   // Fonction pour charger les infos du projet depuis l'API
-  const fetchProject = () => {
-    fetch(`http://127.0.0.1:8000/projects/${projectId}`)
-      .then((res) => res.json())
-      .then(setProject);
+  const fetchProject = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Utilisation de la fonction API avec la nouvelle convention
+      const projectData = await GET_ProjectById(projectId);
+      setProject(projectData);
+    } catch (err) {
+      console.error("Erreur lors du chargement du projet:", err);
+      setError(err.message || "Erreur lors du chargement du projet");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Recharge le projet à chaque changement d'ID (donc à chaque changement de projet)
@@ -35,7 +48,8 @@ export default function StaggingProjectPage() {
   };
 
   // Affiche un message de chargement si le projet n'est pas encore chargé
-  if (!project) return <div>Chargement...</div>;
+  if (loading) return <div>Chargement...</div>;
+  if (error) return <div>Erreur: {error}</div>;
 
   return (
     <div>

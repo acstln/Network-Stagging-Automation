@@ -14,6 +14,8 @@ class Device(SQLModel, table=True):
     selected: bool = False
     project_id: Optional[int] = Field(default=None, foreign_key="project.id")
     configuration: Optional[str] = None
+    stacked_models: Optional[str] = None  # JSON stringified list
+    stacked_serials: Optional[str] = None  # JSON stringified list
     project: Optional["Project"] = Relationship(back_populates="devices")
 
 class Project(SQLModel, table=True):

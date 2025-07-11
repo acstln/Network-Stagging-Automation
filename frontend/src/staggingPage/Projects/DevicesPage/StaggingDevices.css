@@ -65,3 +65,45 @@
     padding: 8px 6px;
   }
 }
+
+.operation-status-indicator {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-left: auto;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.operation-status-indicator.running {
+  background-color: rgba(9, 105, 218, 0.1);
+  color: #0969da;
+}
+
+.operation-status-indicator.running:before {
+  display: inline-block;
+  margin-right: 6px;
+  animation: spin 1.2s linear infinite;
+}
+
+.operation-status-indicator.success {
+  background-color: rgba(45, 164, 78, 0.1);
+  color: #2da44e;
+}
+
+.operation-status-indicator.error {
+  background-color: rgba(207, 34, 46, 0.1);
+  color: #cf222e;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

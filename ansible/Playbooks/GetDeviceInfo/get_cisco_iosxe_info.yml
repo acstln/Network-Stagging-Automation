@@ -22,4 +22,6 @@
           Model: {{ ios_facts_result.ansible_facts.ansible_net_model | default('') }}
           Serial: {{ ios_facts_result.ansible_facts.ansible_net_serialnum | default('') }}
           Version: {{ ios_facts_result.ansible_facts.ansible_net_version | default('') }}
+          StackedModels: {{ ios_facts_result.ansible_facts.ansible_net_stacked_models | default([]) | to_json }}
+          StackedSerials: {{ ios_facts_result.ansible_facts.ansible_net_stacked_serialnums | default([]) | to_json }}
         dest: "{{ output_file | default('output.txt') }}"

@@ -5,103 +5,105 @@ import DiscoveryCredentials from "./DiscoveryCredentials";
 import DiscoveryDeviceType from "./DiscoveryDeviceType";
 import DiscoverySoftwareUpload from "./DiscoverySoftwareUpload";
 import DiscoveryCollectInfo from "./DiscoveryCollectInfo";
+// Import de l'API extraite
+import POST_CollectInfo from "../../../api/Projects/POST/POST_CollectInfo";
 
-export default function StepTimeline({ scanResults, onResultsUpdate, project }) {
+/**
+ * Composant principal pour la timeline de découverte
+ * Gère la progression à travers les différentes étapes du processus de découverte
+ */
+export default function DiscoveryTimeline({ scanResults, onResultsUpdate, project, setIsScanning }) {
+  // État pour stocker les identifiants entrés par l'utilisateur
   const [credentials, setCredentials] = useState(null);
+  
+  // État pour stocker les types d'appareils sélectionnés
   const [deviceType, setDeviceType] = useState([]);
-  const [stepsCompleted, setStepsCompleted] = useState({
-    credentials: false,
-    subnet: false,
-    vendor: false,
-    collect: false,
-  });
-
-  // Etape 1 : Discovery OK si au moins un device online
+  
+  // Évaluation de la complétion des étapes
+  
+  // Étape 1: Découverte réussie si au moins un appareil est en ligne
   const isDiscoveryCompleted = scanResults && scanResults.some((d) => d.status === "online");
-  // Etape 2 : Credentials OK si renseignés
+  
+  // Étape 2: Identifiants fournis
   const isCredentialsCompleted = !!credentials;
-  // Etape 3 : Device type OK si au moins un type sélectionné
+  
+  // Étape 3: Au moins un type d'appareil sélectionné
   const isDeviceTypeCompleted = deviceType && deviceType.length > 0;
-
-  // Toutes les étapes (hors upload) doivent être completed
+  
+  // Vérification que tous les appareils ont les informations nécessaires
   const allDevicesHaveInfo = scanResults && scanResults.length > 0 && scanResults.every(
     d => d.model && d.serial && d.version
   );
+  
+  // Vérification que tous les appareils ont un OS défini
   const allDevicesHaveOs = scanResults && scanResults.length > 0 && scanResults.every(
     d => d.os
   );
-  const allStepsCompleted = isDiscoveryCompleted && isCredentialsCompleted && isDeviceTypeCompleted && allDevicesHaveOs;
+  
+  // Toutes les étapes requises sont complétées
+  const allStepsCompleted = isDiscoveryCompleted && isCredentialsCompleted && 
+                            isDeviceTypeCompleted && allDevicesHaveOs;
 
+  /**
+   * Gère la sélection des types d'appareils
+   * @param {Array} models - Les modèles sélectionnés
+   */
   const handleDeviceTypeSelected = (models) => {
     setDeviceType(models);
   };
 
+  /**
+   * Démarre la collecte d'informations sur les appareils
+   * @returns {Promise<Object>} - Résultats de la collecte
+   */
   const handleCollectInfo = async () => {
     if (!credentials || !credentials.username || !credentials.password) {
       alert("Please enter credentials first.");
       return;
     }
-    const res = await fetch(`http://127.0.0.1:8000/projects/${project.id}/collect`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: credentials.username,
-        password: credentials.password,
-      }),
-    });
-    if (!res.ok) return { results: [{ status: "error", message: "Erreur réseau" }] };
-    return await res.json();
-  };
-
-  const handleDiscover = () => {
-    const allDevicesHaveInfo = scanResults.every(
-      (d) => d.model && d.serial && d.version
-    );
-    if (
-      isCredentialsCompleted &&
-      isDiscoveryCompleted &&
-      isDeviceTypeCompleted &&
-      allDevicesHaveInfo
-    ) {
-      // Ne reset rien, tout est déjà complété
-      return;
-    }
-    // Sinon, reset tous les steps et les states associés
-    setStepsCompleted({
-      credentials: false,
-      subnet: false,
-      vendor: false,
-      collect: false,
-    });
-    setCredentials(null);
-    setDeviceType([]);
-    // Rafraîchit la liste après un petit délai pour laisser la BDD se mettre à jour
-    setTimeout(() => {
-      if (onResultsUpdate) onResultsUpdate();
-    }, 700); // 700ms, ajuste si besoin
+    
+    // Utilisation de l'API extraite
+    return await POST_CollectInfo(project.id, credentials);
   };
 
   return (
     <div className="staggingTimeLine" style={{ margin: "48px auto 0 auto", display: "flex", gap: 32 }}>
       <div style={{ flex: 1 }}>
+        {/* Étape 1: Scan réseau */}
         <div className="step">
           <DiscoveryNetScan
-            defaultSubnet="192.168.254.64/28"
+            defaultSubnet="172.17.77.0/29" // Subnet prérempli comme demandé
             onResultsUpdate={onResultsUpdate}
             scanResults={scanResults}
             completed={isDiscoveryCompleted}
             project={project}
+            setIsScanning={setIsScanning}
           />
         </div>
+        
+        {/* Étape 2: Saisie des identifiants */}
         <div className="step">
-          <DiscoveryCredentials onSubmit={setCredentials} completed={isCredentialsCompleted} />
+          <DiscoveryCredentials 
+            onSubmit={setCredentials} 
+            completed={isCredentialsCompleted} 
+          />
         </div>
+        
+        {/* Étape 3: Définition des types d'appareils */}
         <div className="step">
-          <DiscoveryDeviceType devices={scanResults} onDeviceTypeSelected={handleDeviceTypeSelected} completed={isDeviceTypeCompleted} />
+          <DiscoveryDeviceType 
+            devices={scanResults} 
+            onDeviceTypeSelected={handleDeviceTypeSelected} 
+            completed={isDeviceTypeCompleted} 
+          />
         </div>
+        
+        {/* Étape 4: Téléchargement de logiciels (optionnel) */}
         <div className="step">
           <DiscoverySoftwareUpload onUpload={() => {}} />
         </div>
+        
+        {/* Étape 5: Collecte d'informations */}
         <div className="step">
           <DiscoveryCollectInfo
             onCollect={handleCollectInfo}

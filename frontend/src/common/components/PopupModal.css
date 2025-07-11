@@ -1,0 +1,142 @@
+.modal-overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 36px 32px 28px 32px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  max-width: 420px;
+  width: 94vw;
+  text-align: left;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  color: #23272f;
+  font-size: 1.35rem;
+  margin-bottom: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.modal-content p {
+  margin-bottom: 0;
+  font-size: 1.05rem;
+  color: #444;
+}
+
+.modal-content input,
+.modal-content textarea {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 9px 12px;
+  border: 1.5px solid #d0d7de;
+  border-radius: 7px;
+  font-size: 1rem;
+  background: #f6f8fa;
+  color: #222;
+  resize: none;
+  transition: border 0.18s;
+}
+
+.modal-content input:focus,
+.modal-content textarea:focus {
+  border: 1.5px solid #0969da;
+  outline: none;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Boutons principaux du modal */
+.btn-create,
+.btn-create-dark {
+  background: #23272f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-width: 90px;
+}
+.btn-create:hover,
+.btn-create-dark:hover {
+  background: #111217;
+}
+
+.btn-cancel {
+  background: #e0e0e0;
+  color: #444;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-width: 90px;
+}
+.btn-cancel:hover {
+  background: #d0d7de;
+}
+
+.btn-cancel-dark {
+  background: #e0e0e0;
+  color: #23272f;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  min-width: 90px;
+}
+.btn-cancel-dark:hover {
+  background: #d0d7de;
+  color: #111217;
+}
+
+.btn-delete-dark {
+  background: #23272f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  min-width: 90px;
+}
+.btn-delete-dark:hover {
+  background: #cf222e;
+  color: #fff;
+}
+
+/* Pour éviter le scroll horizontal sur mobile */
+@media (max-width: 500px) {
+  .modal-content {
+    padding: 22px 8vw 18px 8vw;
+    max-width: 98vw;
+  }
+}

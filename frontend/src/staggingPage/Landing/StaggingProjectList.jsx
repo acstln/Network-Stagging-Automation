@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createProject, fetchProjects, deleteProject } from "../../api/projects";
+import { POST_CreateProject } from "../api/Projects/POST/POST_CreateProject";
+import { GET_ProjectList } from "../api/Projects/GET/GET_ProjectList";
+import { DELETE_Project } from "../api/Projects/DELETE/DELETE_Project";
 import "./StaggingProjectList.css";
 import ButtonTrash from "../../medias/ButtonTrash"; // Ajout de l'import
+import PopupModal from "../../common/components/PopupModal";
 
 export default function StaggingProjectList() {
   const [form, setForm] = useState({ name: "", creator: "", description: "" });
@@ -14,7 +17,7 @@ export default function StaggingProjectList() {
 
   useEffect(() => {
     const getProjects = async () => {
-      const fetchedProjects = await fetchProjects();
+      const fetchedProjects = await GET_ProjectList();
       setProjects(fetchedProjects);
     };
     getProjects();
@@ -24,7 +27,7 @@ export default function StaggingProjectList() {
     e.preventDefault();
     setLoading(true);
     if (form.name && form.creator) {
-      const newProject = await createProject(form);
+      const newProject = await POST_CreateProject(form);
       setProjects([...projectsList, newProject]);
       setForm({ name: "", creator: "", description: "" });
       setShowModal(false);
@@ -34,7 +37,7 @@ export default function StaggingProjectList() {
   };
 
   const handleDelete = async (id) => {
-    await deleteProject(id);
+    await DELETE_Project(id);
     setProjects(projectsList.filter(p => p.id !== id));
   };
 
@@ -80,68 +83,70 @@ export default function StaggingProjectList() {
         ))}
       </div>
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Create a new Stagging Project</h3>
-            <form onSubmit={handleSubmit}>
-              <input
-                placeholder="Project name"
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                required
-                autoFocus
-              />
-              <input
-                placeholder="Creator"
-                value={form.creator}
-                onChange={e => setForm(f => ({ ...f, creator: e.target.value }))}
-                required
-              />
-              <textarea
-                placeholder="Description"
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                rows={3}
-              />
-              <div className="modal-actions">
-                <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-create" disabled={loading}>
-                  {loading ? "Creating..." : "Create"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {confirmDeleteId && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Delete Project</h3>
-            <p>
-              Are you sure you want to delete this project?<br />
-              <span style={{ color: "#cf222e", fontWeight: 500 }}>This action cannot be undone.</span>
-            </p>
+        <PopupModal open={showModal} title="Create a new Stagging Project" onClose={() => setShowModal(false)}>
+          <form onSubmit={handleSubmit}>
+            <input
+              placeholder="Project name"
+              value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              required
+              autoFocus
+            />
+            <input
+              placeholder="Creator"
+              value={form.creator}
+              onChange={e => setForm(f => ({ ...f, creator: e.target.value }))}
+              required
+            />
+            <textarea
+              placeholder="Description"
+              value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              rows={3}
+            />
             <div className="modal-actions">
               <button
-                className="btn-cancel-dark"
-                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+                className="btn-cancel"
+                onClick={() => setShowModal(false)}
               >
                 Cancel
               </button>
               <button
-                className="btn-delete-dark"
-                onClick={async () => {
-                  await handleDelete(confirmDeleteId);
-                  setConfirmDeleteId(null);
-                }}
+                type="submit"
+                className="btn-create"
+                disabled={loading}
               >
-                Delete
+                {loading ? "Creating..." : "Create"}
               </button>
             </div>
+          </form>
+        </PopupModal>
+      )}
+      {confirmDeleteId && (
+        <PopupModal open={!!confirmDeleteId} title="Delete Project" onClose={() => setConfirmDeleteId(null)}>
+          <p>
+            Are you sure you want to delete this project?<br />
+            <span style={{ color: "#cf222e", fontWeight: 500 }}>This action cannot be undone.</span>
+          </p>
+          <div className="modal-actions">
+            <button
+              className="btn-cancel-dark"
+              onClick={() => setConfirmDeleteId(null)}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn-delete-dark"
+              onClick={async () => {
+                await handleDelete(confirmDeleteId);
+                setConfirmDeleteId(null);
+              }}
+            >
+              Delete
+            </button>
           </div>
-        </div>
+        </PopupModal>
       )}
     </div>
   );

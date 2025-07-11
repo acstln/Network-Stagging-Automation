@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import "../common/CommonDeviceActions.css";
+import "../common/CommonDeviceActions/CommonDeviceActions.css";
+import "../common/CommonDeviceTable/OperationIndicator.css";
 import { rediscoverDevices } from "./DeviceOperations/rediscover";
 import { checkAvailability } from "./DeviceOperations/checkAvailability";
 import { downloadConfig } from "./DeviceOperations/DownloadConfig";
@@ -8,6 +9,20 @@ import ErrorModal from "../../../common/components/ErrorModal";
 import ButtonTrash from "../../../medias/ButtonTrash";
 import ButtonExport from "../../../medias/ButtonExport";
 import ButtonGear from "../../../medias/ButtonGear";
+import ButtonCheckAvailability from "../../../medias/ButtonReload";
+import PopupModal from "../../../common/components/PopupModal";
+import CheckAvailability from "../common/CommonDeviceActions/CheckAvailability";
+import DeleteButton from "../common/CommonDeviceActions/DeleteDeviceButton";
+
+// Nouveau composant pour l'icône "refresh/check"
+function RefreshCircleIcon({ width = 22, height = 22, color = "#0969da", style = {} }) {
+  return (
+    <svg width={width} height={height} viewBox="0 0 24 24" style={style} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M21 12a9 9 0 1 1-2.648-6.352" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M17 5h2.5a.5.5 0 0 1 .5.5V8" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
 
 function downloadFile(filename, content, mimeType) {
   const blob = new Blob([content], { type: mimeType });
@@ -52,54 +67,69 @@ function toCSV(devices) {
 }
 
 function CredentialsModal({ open, onSubmit, onCancel }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-
-  if (!open) return null;
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
 
   return (
-    <div className="cred-modal-overlay">
-      <div className="cred-modal">
-        <h3>Authentification SSH</h3>
-        <label>
-          Username
-          <input
-            autoFocus
-            type="text"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            autoComplete="username"
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            autoComplete="current-password"
-          />
-        </label>
-        <div className="cred-modal-actions">
-          <button className="action-btn" onClick={() => onSubmit({ username, password })} disabled={!username || !password}>
-            Valider
-          </button>
-          <button className="action-btn action-btn--delete" onClick={onCancel}>
-            Annuler
-          </button>
-        </div>
+    <PopupModal open={open} title="Authentification SSH" onClose={onCancel}>
+      <label>
+        Username
+        <input
+          autoFocus
+          type="text"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          autoComplete="username"
+        />
+      </label>
+      <label>
+        Password
+        <input
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          autoComplete="current-password"
+        />
+      </label>
+      <div className="modal-actions">
+        
+        <button
+          className="btn-cancel"
+          onClick={onCancel}
+          type="button"
+        >
+          Cancel
+        </button>
+        <button
+          className="btn-create"
+          onClick={() => onSubmit({ username, password })}
+          disabled={!username || !password}
+          type="button"
+        >
+          Validate
+        </button>
       </div>
-    </div>
+    </PopupModal>
   );
 }
 
-export default function StaggingDeviceActions({ selected, devices = [], onRefresh, setSelected, projectId }) {
+export default function StaggingDeviceActions({ 
+  selected, 
+  devices = [], 
+  onRefresh, 
+  setSelected, 
+  projectId,
+  startOperation,
+  completeOperation 
+}) {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
-  const [exportAnimating, setExportAnimating] = useState(false);
-  const [credModalOpen, setCredModalOpen] = useState(false);
+  const [credModalOpen, setCredModalOpen] = useState(false); // <-- Correction ici
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [checking, setChecking] = useState(false); // Ajout état pour l'animation
+  const [exportAnimating, setExportAnimating] = useState(false);
+  const [operationStatus, setOperationStatus] = useState({ type: null, message: "" }); // Nouvel état pour le statut de l'opération
   const credPromiseRef = useRef();
   const exportBtnRef = useRef(null);
   const actionsBtnRef = useRef(null);
@@ -112,14 +142,28 @@ export default function StaggingDeviceActions({ selected, devices = [], onRefres
       ) {
         return;
       }
+      
+      // Si clic en dehors, fermer les menus
       setShowExportMenu(false);
       setShowActionsMenu(false);
     }
+    
+    // N'ajouter l'écouteur que lorsqu'un menu est ouvert
     if (showExportMenu || showActionsMenu) {
       document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showExportMenu, showActionsMenu]);
+
+  // Ajouter au début du composant pour vérifier les props reçues
+  useEffect(() => {
+    console.log("DeviceActions - Props reçues:", { 
+      selected, 
+      devicesCount: devices.length, 
+      hasStartOperation: !!startOperation, 
+      hasCompleteOperation: !!completeOperation 
+    });
+  }, [selected, devices, startOperation, completeOperation]);
 
   const selectedDevices = devices.filter(d => selected.includes(d.id || d.ip));
   const allSameOS = selectedDevices.length > 0 && selectedDevices.every(d => d.os === selectedDevices[0].os);
@@ -142,78 +186,246 @@ export default function StaggingDeviceActions({ selected, devices = [], onRefres
     credPromiseRef.current && credPromiseRef.current(null);
   }
 
+  // Modifiez la fonction handleAction pour qu'elle gère les indicateurs
   const handleAction = async (action) => {
+    console.log("Action sélectionnée:", action);
     setShowActionsMenu(false);
-
-    if (action === "rediscover") {
-      if (!selectedDevices.length) return;
-      const missingVendorOrOs = selectedDevices.find(
-        d => !d.vendor || !d.os
-      );
-      if (missingVendorOrOs) {
-        setErrorMessage(
-          "At least one selected device is missing its Vendor or OS information.\n\n" +
-          "Please define the Vendor and OS for all selected devices in the Overview tab before running Rediscover."
-        );
-        setErrorModalOpen(true);
+    
+    console.log("Props disponibles:", { selected, startOperation, completeOperation });
+    
+    const selectedDevices = devices.filter(d => selected.includes(d.id));
+    console.log("Appareils sélectionnés:", selectedDevices);
+    
+    if (!selectedDevices.length) return;
+    
+    try {
+      if (action === "rediscover") {
+        // Afficher l'indicateur de progression
+        setOperationStatus({
+          type: "running",
+          message: `Redécouverte de ${selectedDevices.length} appareil(s)...`
+        });
+        
+        // Démarrer l'opération au niveau du composant parent pour l'indicateur par ligne
+        if (startOperation) startOperation(selected);
+        
+        // Demander les credentials
+        const creds = await askCredentials();
+        if (!creds) {
+          // Annulation par l'utilisateur
+          setOperationStatus({ type: null, message: "" });
+          if (completeOperation) completeOperation(selected, false);
+          return;
+        }
+        
+        try {
+          // Exécuter la redécouverte
+          await rediscoverDevices({
+            projectId,
+            creds,
+            selectedDevices
+          });
+          
+          // Marqueur de succès pour l'indicateur par ligne
+          if (completeOperation) completeOperation(selected, true);
+          
+          // Afficher un message de succès
+          setOperationStatus({
+            type: "success",
+            message: `Redécouverte réussie de ${selectedDevices.length} appareil(s)!`
+          });
+          
+          // Utiliser la même approche que checkAvailability:
+          // Faire un refresh normal mais avec un délai pour permettre
+          // aux modifications d'être enregistrées côté serveur
+          if (onRefresh) {
+            setTimeout(() => {
+              onRefresh(); // Refresh standard
+            }, 700);
+          }
+          
+          // Effacer l'indicateur après 3 secondes
+          setTimeout(() => {
+            setOperationStatus({ type: null, message: "" });
+          }, 3000);
+        } catch (err) {
+          // Gestion d'erreur (inchangée)
+          setErrorMessage(err.message);
+          setErrorModalOpen(true);
+          
+          // Afficher un message d'erreur
+          setOperationStatus({
+            type: "error",
+            message: `Erreur lors de la redécouverte: ${err.message.substring(0, 50)}...`
+          });
+          
+          if (completeOperation) completeOperation(selected, false);
+          
+          // Effacer l'indicateur après 5 secondes
+          setTimeout(() => {
+            setOperationStatus({ type: null, message: "" });
+          }, 5000);
+        }
+      } else if (action === "download-config") {
+        // Même structure...
+        setOperationStatus({
+          type: "running",
+          message: `Téléchargement de la configuration de ${selectedDevices.length} appareil(s)...`
+        });
+        
+        if (startOperation) startOperation(selected);
+        
+        const creds = await askCredentials();
+        if (!creds) {
+          setOperationStatus({ type: null, message: "" });
+          if (completeOperation) completeOperation(selected, false);
+          return;
+        }
+        
+        try {
+          for (const device of selectedDevices) {
+            const config = await downloadConfig({ device, creds });
+            downloadFile(
+              `config_${device.name || device.ip || device.id}.txt`,
+              config,
+              "text/plain"
+            );
+          }
+          
+          setOperationStatus({
+            type: "success",
+            message: `Configuration téléchargée avec succès!`
+          });
+          
+          if (completeOperation) completeOperation(selected, true);
+          
+          setTimeout(() => {
+            setOperationStatus({ type: null, message: "" });
+          }, 3000);
+        } catch (e) {
+          setErrorMessage(e.message);
+          setErrorModalOpen(true);
+          
+          setOperationStatus({
+            type: "error",
+            message: `Erreur lors du téléchargement: ${e.message.substring(0, 50)}...`
+          });
+          
+          if (completeOperation) completeOperation(selected, false);
+          
+          setTimeout(() => {
+            setOperationStatus({ type: null, message: "" });
+          }, 5000);
+        }
+      } else if (action === "backup-config") {
+        // Afficher l'indicateur de progression
+        setOperationStatus({
+          type: "running",
+          message: `Sauvegarde de la configuration de ${selectedDevices.length} appareil(s)...`
+        });
+        
+        // Démarrer l'opération au niveau du composant parent
+        if (startOperation) startOperation(selected);
+        
+        // Demander les credentials
+        const creds = await askCredentials();
+        if (!creds) {
+          // Annulation par l'utilisateur
+          setOperationStatus({ type: null, message: "" });
+          if (completeOperation) completeOperation(selected, false);
+          return;
+        }
+        
+        try {
+          for (const device of selectedDevices) {
+            await backupConfig({ device, creds });
+          }
+          
+          
+          // Afficher un message de succès
+          setOperationStatus({
+            type: "success",
+            message: `Configuration sauvegardée avec succès!`
+          });
+          
+          // Marquer l'opération comme terminée avec succès
+          if (completeOperation) completeOperation(selected, true);
+          
+          // Effacer l'indicateur après 3 secondes
+          setTimeout(() => {
+            setOperationStatus({ type: null, message: "" });
+          }, 3000);
+        } catch (e) {
+          // Afficher l'erreur
+          setErrorMessage(e.message);
+          setErrorModalOpen(true);
+          
+          // Afficher un message d'erreur
+          setOperationStatus({
+            type: "error",
+            message: `Erreur lors de la sauvegarde: ${e.message.substring(0, 50)}...`
+          });
+          
+          // Marquer l'opération comme terminée avec échec
+          if (completeOperation) completeOperation(selected, false);
+          
+          // Effacer l'indicateur après 5 secondes
+          setTimeout(() => {
+            setOperationStatus({ type: null, message: "" });
+          }, 5000);
+        }
+      } else if (action === "rename") {
+        // Traitement pour renommer les appareils sélectionnés
+        if (!selectedDevices.length) return;
+        
+        // Demander le nouveau nom
+        const newName = prompt("Entrez le nouveau nom pour le(s) appareil(s) sélectionné(s):", 
+                              selectedDevices.length === 1 ? selectedDevices[0].name || "" : "");
+        
+        if (newName === null) return; // L'utilisateur a annulé
+        
+        try {
+          // Mettre à jour chaque appareil sélectionné
+          await Promise.all(selectedDevices.map(device => 
+            fetch(`http://127.0.0.1:8000/devices/${device.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: newName }),
+            })
+          ));
+          
+          // Rafraîchir la liste des appareils
+          if (onRefresh) setTimeout(onRefresh, 200);
+          // Marquer l'opération comme terminée avec succès
+          if (completeOperation) completeOperation(selected, true);
+        } catch (e) {
+          setErrorMessage("Erreur lors du renommage: " + e.message);
+          setErrorModalOpen(true);
+          // Marquer l'opération comme terminée avec échec
+          if (completeOperation) completeOperation(selected, false);
+        }
         return;
+      } else {
+        alert(`Action "${action}" sur ${selectedDevices.length} device(s)`);
+        // Marquer l'opération comme terminée avec succès
+        if (completeOperation) completeOperation(selected, true);
       }
-      const creds = await askCredentials();
-      if (!creds) return;
-      try {
-        await rediscoverDevices({ projectId, creds, selectedDevices });
-        if (onRefresh) setTimeout(onRefresh, 700);
-      } catch (e) {
-        setErrorMessage(e.message);
-        setErrorModalOpen(true);
-      }
-      return;
-    } else if (action === "check-availability") {
-      if (!selectedDevices.length) return;
-      try {
-        await checkAvailability({ selectedDevices });
-        if (onRefresh) onRefresh();
-      } catch (e) {
-        setErrorMessage("An error occurred while checking device availability.");
-        setErrorModalOpen(true);
-      }
-      return;
-    } else if (action === "download-config") {
-      if (!selectedDevices.length) return;
-      const creds = await askCredentials();
-      if (!creds) return;
-      try {
-        for (const device of selectedDevices) {
-          const config = await downloadConfig({ device, creds });
-          downloadFile(
-            `config_${device.name || device.ip || device.id}.txt`,
-            config,
-            "text/plain"
-          );
-        }
-        if (onRefresh) onRefresh();
-      } catch (e) {
-        setErrorMessage(e.message);
-        setErrorModalOpen(true);
-      }
-      return;
-    } else if (action === "backup-config") {
-      if (!selectedDevices.length) return;
-      const creds = await askCredentials();
-      if (!creds) return;
-      try {
-        for (const device of selectedDevices) {
-          await backupConfig({ device, creds });
-        }
-        if (onRefresh) onRefresh();
-        alert("Backup terminé !");
-      } catch (e) {
-        setErrorMessage(e.message);
-        setErrorModalOpen(true);
-      }
-      return;
+    } catch (error) {
+      console.error(`Erreur lors de l'action ${action}:`, error);
+      setErrorMessage(`Erreur lors de l'action ${action}: ${error.message}`);
+      setErrorModalOpen(true);
+      
+      setOperationStatus({
+        type: "error",
+        message: `Erreur lors de l'action ${action}: ${error.message.substring(0, 50)}...`
+      });
+      
+      if (completeOperation) completeOperation(selected, false);
+      
+      setTimeout(() => {
+        setOperationStatus({ type: null, message: "" });
+      }, 5000);
     }
-    alert(`Action "${action}" sur ${selectedDevices.length} device(s)`);
   };
 
   const handleExportClick = () => {
@@ -224,7 +436,10 @@ export default function StaggingDeviceActions({ selected, devices = [], onRefres
   const handleExportType = (type) => {
     setShowExportMenu(false);
     if (!devices.length) return;
+    
+    // Ajouter cette ligne pour activer l'animation
     setExportAnimating(true);
+    
     setTimeout(() => {
       if (type === "csv") {
         const csv = toCSV(devices);
@@ -233,6 +448,7 @@ export default function StaggingDeviceActions({ selected, devices = [], onRefres
         downloadFile("devices.json", JSON.stringify(devices, null, 2), "application/json");
       }
     }, 400);
+    
     setTimeout(() => {
       setExportAnimating(false);
     }, 750);
@@ -253,24 +469,37 @@ export default function StaggingDeviceActions({ selected, devices = [], onRefres
     }
   };
 
+  const handleCheckAvailability = async (devicesToCheck) => {
+    await checkAvailability({ selectedDevices: devicesToCheck });
+    if (onRefresh) setTimeout(onRefresh, 700);
+  };
+
   return (
     <div className="device-actions-group" style={{ display: "flex", gap: 8 }}>
-      {/* Delete à gauche, icône poubelle custom */}
-      <button
-        className="flat-icon"
-        disabled={selected.length === 0}
-        onClick={handleDelete}
-        title="Delete"
-      >
-        <ButtonTrash />
-      </button>
+      {/* Indicateur d'opération - placé tout à gauche */}
+      {operationStatus.type && (
+        <div className={`operation-status-indicator ${operationStatus.type}`}>
+          {operationStatus.type === "running" && <div className="spinner-circle"></div>}
+          {operationStatus.type === "success" && "✓ "}
+          {operationStatus.type === "error" && "✗ "}
+          {operationStatus.message}
+        </div>
+      )}
+      
+      {/* Delete à droite de l'indicateur */}
+      <DeleteButton 
+        selected={selected} 
+        onRefresh={onRefresh}
+        setSelected={setSelected}
+      />
+      
       {/* Espaceur pour pousser les boutons à droite */}
       <div style={{ flex: 1 }} />
       {/* Export juste à gauche de la roue crantée */}
-      <div ref={exportBtnRef} style={{ position: "relative" }}>
+      <div ref={exportBtnRef} className={`action-btn-dropdown-container${showExportMenu ? " active" : ""}`}>
         <button
           className={`flat-icon${exportAnimating ? " export-animating" : ""}`}
-          disabled={devices.length === 0 || exportAnimating}
+          disabled={devices.length === 0}
           onClick={handleExportClick}
           type="button"
           title="Export"
@@ -295,12 +524,15 @@ export default function StaggingDeviceActions({ selected, devices = [], onRefres
         )}
       </div>
       {/* Roue crantée complètement à droite */}
-      <div ref={actionsBtnRef} style={{ marginLeft: "auto", position: "relative" }}>
+      <div ref={actionsBtnRef} className={`action-btn-dropdown-container${showActionsMenu ? " active" : ""}`} style={{ marginLeft: "auto" }}>
         <button
           className="flat-icon"
           type="button"
           disabled={selected.length === 0}
-          onClick={() => setShowActionsMenu(v => !v)}
+          onClick={() => {
+            console.log("Gear button clicked, showing menu");
+            setShowActionsMenu(prev => !prev);
+          }}
           title="Actions"
         >
           <ButtonGear />
@@ -313,11 +545,12 @@ export default function StaggingDeviceActions({ selected, devices = [], onRefres
             >
               Rediscover
             </div>
+            {/* Nouvelle option Rename */}
             <div
               className="action-btn-dropdown-option"
-              onClick={() => handleAction("check-availability")}
+              onClick={() => handleAction("rename")}
             >
-              Check Availability
+              Rename
             </div>
             <div
               className="action-btn-dropdown-option"
@@ -371,6 +604,11 @@ export default function StaggingDeviceActions({ selected, devices = [], onRefres
           </div>
         )}
       </div>
+      <CheckAvailability
+        devices={devices}
+        onRefresh={onRefresh}
+        style={{ marginLeft: 4 }}
+      />
       {/* Error Modal */}
       {errorModalOpen && (
         <ErrorModal

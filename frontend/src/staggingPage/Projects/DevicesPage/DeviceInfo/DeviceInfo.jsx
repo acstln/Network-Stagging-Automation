@@ -23,6 +23,38 @@ export default function DeviceInfo() {
     configHistory = [];
   }
 
+  function renderStacked(main, stackedJson) {
+    let stacked = [];
+    try {
+      stacked = JSON.parse(stackedJson || "[]");
+    } catch { /* ignore */ }
+    if (!stacked || !Array.isArray(stacked) || stacked.length === 0) return main || "";
+    // Affiche le principal + chaque stacké sur une nouvelle ligne
+    return (
+      <span>
+        <div>{main}</div>
+        {stacked.map((val, i) => (
+          <div key={i} style={{ fontSize: "0.98em", color: "#555" }}>{val}</div>
+        ))}
+      </span>
+    );
+  }
+
+  function renderMulti(jsonStr) {
+    let arr = [];
+    try {
+      arr = JSON.parse(jsonStr || "[]");
+    } catch {}
+    if (!arr || !Array.isArray(arr) || arr.length === 0) return "";
+    return (
+      <span>
+        {arr.map((val, i) => (
+          <div key={i} style={{ fontSize: "0.98em", color: "#555" }}>{val}</div>
+        ))}
+      </span>
+    );
+  }
+
   return (
     <div style={{ maxWidth: 700, margin: "40px auto", background: "#fff", borderRadius: 8, boxShadow: "0 2px 12px #eee", padding: 32 }}>
       <h2 style={{ marginBottom: 24, color: "#0969da" }}>
@@ -33,8 +65,8 @@ export default function DeviceInfo() {
           <tr><td style={{ fontWeight: 500 }}>IP</td><td>{device.ip}</td></tr>
           <tr><td style={{ fontWeight: 500 }}>Nom</td><td>{device.name}</td></tr>
           <tr><td style={{ fontWeight: 500 }}>Status</td><td>{device.status}</td></tr>
-          <tr><td style={{ fontWeight: 500 }}>Modèle</td><td>{device.model}</td></tr>
-          <tr><td style={{ fontWeight: 500 }}>Numéro de série</td><td>{device.serial}</td></tr>
+          <tr><td style={{ fontWeight: 500 }}>Modèle</td><td>{renderMulti(device.model)}</td></tr>
+          <tr><td style={{ fontWeight: 500 }}>Numéro de série</td><td>{renderMulti(device.serial)}</td></tr>
           <tr><td style={{ fontWeight: 500 }}>Version</td><td>{device.version}</td></tr>
           <tr><td style={{ fontWeight: 500 }}>Vendor</td><td>{device.vendor}</td></tr>
           <tr><td style={{ fontWeight: 500 }}>OS</td><td>{device.os}</td></tr>
